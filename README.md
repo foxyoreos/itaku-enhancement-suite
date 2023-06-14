@@ -25,7 +25,7 @@ Keywords are set in the "Blocking & blacklist" tab of your account settings. Bot
 
 ![Picture of the regex settings in dark mode](images/dark-theme-example.png)
 
-![Picture of the regex settings in light mode](images/dark-light-example.png)
+![Picture of the regex settings in light mode](images/light-theme-example.png)
 
 ## Future Planned Features
 
