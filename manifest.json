@@ -1,0 +1,35 @@
+{
+  "manifest_version": 2,
+  "name": "Itaku Enhancement Suite",
+  "version": "0.2",
+
+  "description": "A collection of minor site enhancements for Itaku, the furry website",
+  "icons": {
+    "48": "icons/border-48.png"
+  },
+
+  "permissions": [
+    "*://*.itaku.ee/*",
+    "webRequestBlocking",
+    "webRequest",
+    "storage"
+  ],
+
+  "background": {
+    "scripts": ["src/main.js"],
+    "persistent": false
+  },
+
+  "content_scripts": [{
+    "matches": ["*://*.itaku.ee/*"],
+    "js": ["src/settings/content-warnings.js"],
+    "css": ["src/settings/content-warnings.css"],
+    "run_at": "document_idle"
+  }],
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "itaku-enhancement-suite@foxyoreos"
+    }
+  }
+}
