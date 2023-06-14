@@ -83,6 +83,10 @@ Browser extensions are placed in a privileged position within your browser. Be c
 
 I go by Foxyoreos online. :3
 
+### I have a feature idea
+
+It's better if you contact me on Itaku.ee directly. I'm more likely to see messages there, and I'd like ideas/issues to primarily come from site users. I also will not accept patches/issues/feature-requests from anypony who is under 18 years old.
+
 ### Why is this only released for Firefox?
 
 Because the icon is cute :3 Also because building extensions for Chrome is fckn annoying and I don't want to make a Google account >:3
