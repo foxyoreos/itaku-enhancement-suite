@@ -59,6 +59,8 @@ browser.webRequest.onBeforeRequest.addListener(
 function checkContentObject (result) {
  if (!result.show_content_warning) { return; }
       const show = settings.positive_regexes.reduce((show, regex) => {
+        if (regex == '') { return show; }
+
         try { /* Catch invalid regex */
           return show || !!result.content_warning.match(regex);
         } catch (err) {
@@ -67,6 +69,8 @@ function checkContentObject (result) {
       }, false);
 
       const rehide = settings.negative_regexes.reduce((hide, regex) => {
+        if (regex == '') { return hide; }
+
         try {
           return hide || !!result.content_warning.match(regex);
         } catch (err) {
