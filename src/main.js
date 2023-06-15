@@ -41,6 +41,7 @@ const contentFeeds = {
   urls: [
     'https://itaku.ee/api/feed/?*', /* Both home feed and profile feed */
     'https://itaku.ee/api/posts/?*', /* Home "posts" tab */
+    'https://itaku.ee/api/posts/*/', /* Posts with multiple images embedded within */
     'https://itaku.ee/api/galleries/images/?*', /* Home "images" tab and profile galleries */
     'https://itaku.ee/api/user_profiles/*/latest_content/', /* Recently starred/uploaded */
     'https://itaku.ee/api/galleries/images/user_starred_imgs/?*', /* starred images on profiles */
@@ -113,12 +114,14 @@ function handleContentWarnings (details) {
     const results = json.results || [];
     const latest_gallery_images = json.latest_gallery_images || [];
     const recently_liked_images = json.recently_liked_images || [];
+    const embedded_images = json.gallery_images || [];
     const pinned_item = json.pinned_item || null;
 
     if (pinned_item) { recursivelyCheckPosts(pinned_item); }
     results.forEach((obj) => recursivelyCheckPosts(obj));
     latest_gallery_images.forEach((obj) => recursivelyCheckPosts(obj));
     recently_liked_images.forEach((obj) => recursivelyCheckPosts(obj));
+    embedded_images.forEach((obj) => recursivelyCheckPosts(obj));
 
     filter.write(encoder.encode(JSON.stringify(json)));
 
