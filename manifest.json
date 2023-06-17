@@ -27,7 +27,10 @@
       "src/settings/content-warnings.js",
       "src/components/user_menu.js"
     ],
-    "css": ["src/settings/content-warnings.css"],
+    "css": [
+      "src/settings/content-warnings.css",
+      "src/components/post-warnings.css"
+    ],
     "run_at": "document_idle"
   }],
 
