@@ -49,11 +49,6 @@ const USER_CALLS = {
 async function save () {
   browser.storage.sync.set(settings);
   sessionStorage.setItem('ItakuEnhancedUserMeta', JSON.stringify(user));
-
-  browser.storage.session.set({
-    ItakuEnhancedUserMeta: user,
-    ItakuEnhancedContentCache: contentCache,
-  });
 }
 
 async function load () {
@@ -62,15 +57,6 @@ async function load () {
   const userObj = JSON.parse(sessionStorage.getItem('ItakuEnhancedUserMeta')) || {};
   user.id = userObj.id;
   user.username = userObj.username;
-
-  // const cacheObj = (await browser.storage.session.get('ItakuEnhancedContentCache')).ItakuEnhancedContentCache || {};
-  // const userObj = (await browser.storage.session.get('ItakuEnhancedUserMeta')).ItakuEnhancedUserMeta || {};
-  // console.log('Loaded user from session storage: ', userObj);
-  // Object.keys(cacheObj).forEach((key) => {
-  //   if (contentCache[key]) {
-  //     contentCache[key] = cacheObj[key];
-  //   }
-  // });
 }
 
 /* ------------------------------------------------------ */
