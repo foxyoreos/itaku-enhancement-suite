@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Itaku Enhancement Suite",
-  "version": "0.2",
+  "version": "0.3",
 
   "description": "A collection of minor site enhancements for Itaku, the furry website",
   "icons": {
@@ -22,7 +22,11 @@
 
   "content_scripts": [{
     "matches": ["*://*.itaku.ee/*"],
-    "js": ["src/settings/content-warnings.js"],
+    "js": [
+      "src/components/notifications.js",
+      "src/settings/content-warnings.js",
+      "src/components/user_menu.js"
+    ],
     "css": ["src/settings/content-warnings.css"],
     "run_at": "document_idle"
   }],

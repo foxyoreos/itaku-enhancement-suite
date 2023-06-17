@@ -12,7 +12,7 @@ A good way to think of the Itaku Enhancement Suite is as a set of **polyfills** 
 
 Define **positive** and **negative** filters for content warnings. Content warnings will be shown by default unless they match a positive filter, in which case they will be hidden. Hidden content warnings are also checked against negative filters, in which case they will be re-shown. For example:
 
-A positive filter ``[Vv]ore`` and a negative filter ``[Ff]atal`` will remove a content warning such as "Safe vore", but will not remove a content warning for "Vore, fatal". Broken/malformed regex filters will be ignored.
+A positive filter ``[Vv]ore`` and a negative filter ``[Ff]atal`` will remove a content warning such as "Safe vore", but will not remove a content warning for "Vore, fatal". Broken/malformed regex filters and blank lines will be ignored.
 
 I've attempted to locate as many different parts of the site as possible where this is applicable:
 
@@ -33,6 +33,14 @@ Keywords are set in the "Blocking & blacklist" tab of your account settings. Bot
 
 Show post/image titles in the notifications bell dropdown list.
 
+### Collapse reshares
+
+Currently you can hide reshares entirely, or you can have each reshare show up
+separately on your feed. You should be able to keep reshares on so you can still
+find new artists/pieces, but toggle a setting to see only one reshare per
+image/post in your feed so that the same popular image doesn't clutter up the
+feed.
+
 ### Tag-based Content Warnings
 
 The ability to define content warnings based on post/image tags. This would be strictly superior to using regex filters,  but will be a much more complicated feature because tags are not attached to feed posts by default and will need to be separately queried or filtered in some way. It's possible that hijacking the ``blacklisted`` property might help with this, but doing so would require making changes to the user's account, which is not ideal.
@@ -42,6 +50,13 @@ The ability to define content warnings based on post/image tags. This would be s
 Itaku's current content blocking strategy is fairly inconsistent about when posts get hidden and when posts just get warnings applied. Extending the CW feature to work with tags would open up UX space to have more predictable behaviors:
 
 - Content blocks should "bubble" for embedded images. In other words, if you have the ``vore`` keyword blocked and a post contains an image contains that tag, posts that it is embedded inside should be completely hidden from searches/feeds. It shouldn't just be the image that has a content warning.
+
+- Content blocks should be definable using multiple tags. For example, you should
+be able to block images that have ``vore`` and ``feral`` tags together without
+blocking the individual tags.
+
+- NSFW ratings should be combinable with tag blocks. You should be able to block
+a ``yoshi`` tag from NSFW images without blocking it from SFW images.
 
 ## Design
 

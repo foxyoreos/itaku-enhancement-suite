@@ -1,35 +1,20 @@
+/* ------------------------------------------------------ */
+/* --------------- CACHES/SETTINGS/CONSTANTS ------------ */
+/* ------------------------------------------------------ */
+/* The Itaku Extension Suite loads its background scripts using
+ * persist: false. That means this script will regularly be discarded
+ * and re-loaded; the data here is temporary and will often need to be
+ * re-fetched from extension settings/front-end. */
 
 const settings = {
   positive_regexes: [],
   negative_regexes: [],
 };
 
-/* TODO: this needs to be handled better to avoid race conditions */
-async function getSettings () {
-  settings.positive_regexes = (await browser.storage.sync.get('positive_regexes')).positive_regexes || [];
-  settings.negative_regexes = (await browser.storage.sync.get('negative_regexes')).negative_regexes || [];
-}
-
-function saveSettings () {
-  browser.storage.sync.set(settings);
-}
-
-/* Set up browser messages */
-getSettings();
-browser.runtime.onMessage.addListener((evt, sender, response) => {
-  switch (evt.type) {
-  case 'set_positive_regexes':
-    settings.positive_regexes = evt.content;
-    saveSettings();
-    break;
-  case 'set_negative_regexes':
-    settings.negative_regexes = evt.content;
-    saveSettings();
-    break;
-  case 'get_settings':
-    response({ type: 'response', content: settings });
-  }
-});
+const user = { /* Stored in extension sessionStorage (this is pretty fragile, but probably fine) */
+  id: null,
+  username: null,
+};
 
 /* Feed URLs that need to be checked for warnings. Add additional entry points here.
  * If the structure varries from typical response objects, add additional handling
@@ -37,7 +22,7 @@ browser.runtime.onMessage.addListener((evt, sender, response) => {
  *
  * TODO check for post previews when editing tags, they're likely not handled.
  * TODO check for animations, they might use a different key than "gallery_images" */
-const contentFeeds = {
+const CONTENT_FEEDS = {
   urls: [
     'https://itaku.ee/api/feed/?*', /* Both home feed and profile feed */
     'https://itaku.ee/api/posts/?*', /* Home "posts" tab */
@@ -45,18 +30,168 @@ const contentFeeds = {
     'https://itaku.ee/api/galleries/images/?*', /* Home "images" tab and profile galleries */
     'https://itaku.ee/api/user_profiles/*/latest_content/', /* Recently starred/uploaded */
     'https://itaku.ee/api/galleries/images/user_starred_imgs/?*', /* starred images on profiles */
+
+    /* These links are used more for direct fetch caching, rather than content warnings */
+    'https://itaku.ee/api/*/comments/?*', /* Comment fetch */
+    'https://itaku.ee/api/galleries/images/*/',
   ],
   types: ['xmlhttprequest']
 };
 
-browser.webRequest.onBeforeRequest.addListener(
-  handleContentWarnings, contentFeeds, ['blocking']);
+/* Used to determine which user account we should be caching content for. Stored
+ * only in sessionStorage to avoid any possible data leaks. */
+const USER_CALLS = {
+  urls: ['https://itaku.ee/api/auth/user/'],
+  types: ['xmlhttprequest']
+};
 
-/* Actual filter code for content warnings. No matches
- * should leave the warning untouched. A positive match
- * should hide the content warning. A negative match should
- * re-show the content warning, overriding the positive match. */
-function checkContentObject (result) {
+/* Persist settings and cache (TODO we should watch out for race conditions with "load" here) */
+async function save () {
+  browser.storage.sync.set(settings);
+  sessionStorage.setItem('ItakuEnhancedUserMeta', JSON.stringify(user));
+
+  browser.storage.session.set({
+    ItakuEnhancedUserMeta: user,
+    ItakuEnhancedContentCache: contentCache,
+  });
+}
+
+async function load () {
+  settings.positive_regexes = (await browser.storage.sync.get('positive_regexes')).positive_regexes || [];
+  settings.negative_regexes = (await browser.storage.sync.get('negative_regexes')).negative_regexes || [];
+  const userObj = JSON.parse(sessionStorage.getItem('ItakuEnhancedUserMeta')) || {};
+  user.id = userObj.id;
+  user.username = userObj.username;
+
+  // const cacheObj = (await browser.storage.session.get('ItakuEnhancedContentCache')).ItakuEnhancedContentCache || {};
+  // const userObj = (await browser.storage.session.get('ItakuEnhancedUserMeta')).ItakuEnhancedUserMeta || {};
+  // console.log('Loaded user from session storage: ', userObj);
+  // Object.keys(cacheObj).forEach((key) => {
+  //   if (contentCache[key]) {
+  //     contentCache[key] = cacheObj[key];
+  //   }
+  // });
+}
+
+/* ------------------------------------------------------ */
+/* --------------------- ENTRY LOGIC -------------------- */
+/* ------------------------------------------------------ */
+/* How the extension is wired up and initialized, request handlers attached, and
+ * errors handled. */
+
+async function init () {
+  try {
+    await load();
+
+    /* Receive communication from the front-end (mostly used for setting/fetching settings) */
+    browser.runtime.onMessage.addListener((evt, sender, response) => {
+      switch (evt.type) {
+      case 'set_positive_regexes':
+        settings.positive_regexes = evt.content;
+        saveSettings();
+        break;
+      case 'set_negative_regexes':
+        settings.negative_regexes = evt.content;
+        saveSettings();
+        break;
+      case 'get_settings':
+        response({ type: 'response', content: settings });
+        break;
+      case 'get_user':
+        response({ type: 'response', content: user });
+        break;
+      }
+    });
+
+  } catch (err) { /* Abandon setup */
+    console.log('HEY!!! Report this to foxyoreos on Itaku or on https://codeberg.org/foxyoreos/itaku-enhancement-suite >:3');
+    console.log('If (and only if) you feel comfortable sharing your CW regexes, they may be helpful to include.');
+    console.log('Load failed with error: ', err);
+    return Promise.reject(err);
+  }
+}
+
+/* We want to wait for initialization to finish before responding to any
+ * requests. However, we also want to fail gracefully if initialization blows up
+ * and the extension can't load. The solution is a blocking handler that removes
+ * itself regardless of whether or not initialization happened correctly and
+ * attaches the correct handler/call if everything went OK. */
+const loading = init();
+let attached = false;
+function loadBlockingHandler (details) {
+  console.log('Blocking handler started');
+
+  return loading
+    .then(() => {
+
+      /* In the rare case that two requests are fired off before init is done. */
+      if (attached) { return handleContentObject(details); }
+
+      browser.webRequest.onBeforeRequest.removeListener(loadBlockingHandler);
+      browser.webRequest.onBeforeRequest.addListener(handleContentObject, CONTENT_FEEDS, ['blocking']);
+      console.log('Attached middleware and removed blocking handler.');
+      attached = true;
+      return handleContentObject(details);
+
+    }).then(
+      (result) => result, /* Everything went fine */
+      () => { /* Oops, somewhere along the line we errored out, sowwy ;w; */
+
+        console.log('Initial load failed, detaching backend scripts.');
+        console.log('You may notice errors since I haven\'t added error handling to the UI-side changes yet.');
+        browser.webRequest.onBeforeRequest.removeListener(loadBlockingHandler);
+        return {};
+      });
+}
+
+/* Messaging with notification component */
+let ports = [];
+browser.runtime.onConnect.addListener((port) => {
+  ports.push(port);
+  port.onDisconnect.addListener(()=>{
+    const index = ports.indexOf(port);
+    ports.splice(index, 1);
+  });
+});
+
+/* And finally, the last of the handler setup. */
+browser.webRequest.onBeforeRequest.addListener(
+  loadBlockingHandler, CONTENT_FEEDS, ['blocking']);
+browser.webRequest.onBeforeRequest.addListener((details) => {
+  /* Little bit frustrating that we can't just wait for the request to finish
+   * and look at the body. This method should likely be simplified a bit. */
+  let filter = browser.webRequest.filterResponseData(details.requestId);
+  let decoder = new TextDecoder('utf-8');
+  let str = '';
+  filter.ondata = (e) => {
+    str += decoder.decode(e.data, { stream: true });
+    filter.write(e.data);
+  }
+
+  filter.onstop = (e) => {
+    const json = JSON.parse(str);
+    (() => { /* TODO isn't there like a ?. operator now or something? */
+      if (!json.profile || !json.profile.owner) { return null; }
+      user.username = json.profile.owner_username;
+      user.id = json.profile.owner;
+    })();
+
+    sessionStorage.setItem('ItakuEnhancedUserMeta', JSON.stringify(user));
+    console.log('Caching for user: ', user);
+    filter.close();
+  }
+}, USER_CALLS, ['blocking']);
+
+
+/* ------------------------------------------------------ */
+/* ------------------ EXTENSION LOGIC ------------------- */
+/* ------------------------------------------------------ */
+/* The actual code that's doing stuff. */
+
+/* Filter code for content warnings. No matches should leave the warning
+ * untouched. A positive match should hide the content warning. A negative match
+ * should re-show the content warning, overriding the positive match. */
+function checkContentObjectWarnings (result) {
  if (!result.show_content_warning) { return; }
       const show = settings.positive_regexes.reduce((show, regex) => {
         if (regex == '') { return show; }
@@ -81,24 +216,74 @@ function checkContentObject (result) {
   if (show && !rehide) { result.show_content_warning = false; }
 }
 
-/* Different object types on Itaku are embedded within each other.
- * It's often necessary to repeatedly recurse into objects to
- * get at everything that can have a content warning attached. */
-function recursivelyCheckPosts (result) {
-  checkContentObject(result);
+/* Cache updates. We only cache content that belongs to the user since that's
+ * the only content that will be referenced in the notifications drawer. */
+function cacheContentObject(result) {
+  if (!user.id) { return; }
+  if (user.id !== result.owner) { return; }
+
+  /* Handle both comments and images/posts */
+  const description = result.description || result.content || '';
+  const truncatedDescription = description.slice(0, 50) +
+        (description.length > 50 ? '...' : '');
+
+  /* We don't check to see if a title/description exists
+   * because even if they don't, we still want to mark that
+   * content as fetched so the front-end doesn't try to re-fetch
+   * it a second time. */
+  ports.forEach((port) => {
+    port.postMessage({
+      type: 'cache',
+      content: [{
+        loading: false,
+        id: result.id,
+        title: result.title,
+        description: truncatedDescription,
+      }],
+    });
+  });
+
+  /* TODO determine if it belongs to the user. */
+  /* TODO also cache user comments */
+}
+
+/* Different object types on Itaku are embedded within each other. It's often
+ * necessary to repeatedly recurse into objects to get at everything that can
+ * have a content warning attached. */
+function recurseContentObject (result) {
+  checkContentObjectWarnings(result);
+  cacheContentObject(result);
 
   if (result.gallery_images) {
-    result.gallery_images.forEach((image) => checkContentObject(image));
+    result.gallery_images.forEach(
+      (image) => {
+        checkContentObjectWarnings(image);
+        cacheContentObject(image);
+      });
   }
 
-  /* Handle reposts of images and posts */
+  /* Handle comment requests (note that we don't need to check these for content
+   * warnings though, only to cache) */
+  if (result.children) {
+    result.children.forEach(
+      (child) => {
+        cacheContentObject(child);
+      });
+  }
+
+  /* Handle reposts, which are treated as their own objects */
   if (result.content_object) {
-    recursivelyCheckPosts(result.content_object);
+    recurseContentObject(result.content_object);
   }
 }
 
-/* Entry point: request filter for content warnings. */
-function handleContentWarnings (details) {
+/* Entry point for most "backend" logic:
+ * - check content warnings and modify requests to deal with them.
+ * - save content name/IDs in cache for use with notifications.
+ * - moar stuff in the future too :3
+ *
+ * This is all mostly handled by calling into other functions (see above) */
+function handleContentObject (details) {
   let filter = browser.webRequest.filterResponseData(details.requestId);
   let decoder = new TextDecoder('utf-8');
   let encoder = new TextEncoder();
@@ -121,11 +306,13 @@ function handleContentWarnings (details) {
     const embedded_images = json.gallery_images || [];
     const pinned_item = json.pinned_item || null;
 
-    if (pinned_item) { recursivelyCheckPosts(pinned_item); }
-    results.forEach((obj) => recursivelyCheckPosts(obj));
-    latest_gallery_images.forEach((obj) => recursivelyCheckPosts(obj));
-    recently_liked_images.forEach((obj) => recursivelyCheckPosts(obj));
-    embedded_images.forEach((obj) => recursivelyCheckPosts(obj));
+    /* TODO there could be better checks here to see which are applicable. */
+    recurseContentObject(json); /* Check itself (for direct posts) */
+    if (pinned_item) { recurseContentObject(pinned_item); }
+    results.forEach((obj) => recurseContentObject(obj));
+    latest_gallery_images.forEach((obj) => recurseContentObject(obj));
+    recently_liked_images.forEach((obj) => recurseContentObject(obj));
+    embedded_images.forEach((obj) => recurseContentObject(obj));
 
     filter.write(encoder.encode(JSON.stringify(json)));
 
