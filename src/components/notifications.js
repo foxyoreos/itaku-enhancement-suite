@@ -97,7 +97,7 @@
      * only trigger one fetch, because we get all of the comments for that post
      * as a batch operation. */
     if (fetches[url]) {
-      console.log(`Skipping fetch for ${id} (fetch already in progress)`)
+      console.log(`Skipping ${url} (fetch already in progress)`)
       return;
     }
 

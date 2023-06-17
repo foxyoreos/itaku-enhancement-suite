@@ -27,11 +27,32 @@ Keywords are set in the "Blocking & blacklist" tab of your account settings. Bot
 
 ![Picture of the regex settings in light mode](images/light-theme-example.png)
 
+### Expanded notifications
+
+Basic (and I mean basic) support for fetching and showing image/post/comment titles and content when looking at the notifications drawer. These currently replace the date field, but I have plans to make the UI better in the future.
+
+Behind the scenes, this feature uses an intelligent cache that's shared between all of your Itaku.ee tabs so that
+data isn't fetched unnecessarily. The cache is stored inside of the browser session storage, which will be discarded whenever you close your browser. This helps avoid data leaks.
+
+## Current Fixes
+
+### Click-to-show content warnings on posts
+
+Post content warnings on Itaku tell the user to click to show the post, but the actual text isn't clickable. This change fixes the CSS so when you click on the text, the post actually opens.
+
+### Right-click link support for profile image
+
+Itaku's user menu is only operatable using left-click to open. This changes wraps the profile image so right-clicking will
+show the user profile link and give you the option to "open link in new tab".
+
 ## Future Planned Features
 
 ### Notification Context
 
-Show post/image titles in the notifications bell dropdown list.
+Continue iterating on the UI for expanded notifications:
+
+- Move descriptions/titles out of date field.
+- Show loading indicators while fetching data.
 
 ### Collapse reshares
 
@@ -70,9 +91,11 @@ Being a good citizen and avoiding infrastructure abuse is important. The Itaku E
 
 ## Privacy (policy)
 
-I do not willingly collect any user information, annonymized or not. No information is transmitted from the Itaku Enhancement Suite to any server I control. The extension currently collects the following information and stores it locally within your browser:
+I do not willingly collect any user information, annonymized or not. No information is transmitted from the Itaku Enhancement Suite to any server I control. The extension currently collects the following information and stores it locally within your browser (it is never transmitted off-device):
 
 - Your positive and negative CW filters (user setting, stored in the extension itself)
+- The currently logged in username (temporary cache, stored in sessionStorage and automatically cleared by Firefox after every browsing session)
+- User-created post/image/comment descriptions/titles (temporary cache, stored in sessionStorage and automatically cleared by Firefox after every browsing session)
 
 This list is subject to change as more features are added.
 
