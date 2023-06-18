@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Itaku Enhancement Suite",
-  "version": "0.3.1",
+  "version": "0.3.2",
 
   "description": "A collection of minor site enhancements for Itaku, the furry website",
   "icons": {

@@ -74,11 +74,11 @@ async function init () {
       switch (evt.type) {
       case 'set_positive_regexes':
         settings.positive_regexes = evt.content;
-        saveSettings();
+        save();
         break;
       case 'set_negative_regexes':
         settings.negative_regexes = evt.content;
-        saveSettings();
+        save();
         break;
       case 'get_settings':
         response({ type: 'response', content: settings });
