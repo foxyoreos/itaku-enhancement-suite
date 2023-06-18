@@ -65,12 +65,25 @@ async function load () {
 /* How the extension is wired up and initialized, request handlers attached, and
  * errors handled. */
 
+/* Events need to be top-level to work with non-persistant background scriptsa.
+ * This complicates logic somewhat, but what can you do? */
+let onMessageHandler;
+browser.runtime.onMessage.addListener((evt, sender, response) => {
+  if (onMessageHandler) { return onMessageHandler(evt, sender, response); }
+});
+
+let contentRequestMiddleware = loadBlockingHandler;
+browser.webRequest.onBeforeRequest.addListener((details) => {
+  if (contentRequestMiddleware) { return contentRequestMiddleware(details); }
+  return {};
+}, CONTENT_FEEDS, ['blocking']);
+
 async function init () {
   try {
     await load();
 
     /* Receive communication from the front-end (mostly used for setting/fetching settings) */
-    browser.runtime.onMessage.addListener((evt, sender, response) => {
+    onMessageHandler = (evt, sender, response) => {
       switch (evt.type) {
       case 'set_positive_regexes':
         settings.positive_regexes = evt.content;
@@ -87,7 +100,7 @@ async function init () {
         response({ type: 'response', content: user });
         break;
       }
-    });
+    };
 
   } catch (err) { /* Abandon setup */
     console.log('HEY!!! Report this to foxyoreos on Itaku or on https://codeberg.org/foxyoreos/itaku-enhancement-suite >:3');
@@ -112,11 +125,10 @@ function loadBlockingHandler (details) {
 
       /* In the rare case that two requests are fired off before init is done. */
       if (attached) { return handleContentObject(details); }
-
-      browser.webRequest.onBeforeRequest.removeListener(loadBlockingHandler);
-      browser.webRequest.onBeforeRequest.addListener(handleContentObject, CONTENT_FEEDS, ['blocking']);
-      console.log('Attached middleware and removed blocking handler.');
+      contentRequestMiddleware = handleContentObject;
       attached = true;
+
+      console.log('Attached middleware and removed blocking handler.');
       return handleContentObject(details);
 
     }).then(
@@ -125,7 +137,7 @@ function loadBlockingHandler (details) {
 
         console.log('Initial load failed, detaching backend scripts.');
         console.log('You may notice errors since I haven\'t added error handling to the UI-side changes yet.');
-        browser.webRequest.onBeforeRequest.removeListener(loadBlockingHandler);
+        contentRequestMiddleware = null;
         return {};
       });
 }
@@ -140,9 +152,7 @@ browser.runtime.onConnect.addListener((port) => {
   });
 });
 
-/* And finally, the last of the handler setup. */
-browser.webRequest.onBeforeRequest.addListener(
-  loadBlockingHandler, CONTENT_FEEDS, ['blocking']);
+/* And finally, the last of the handler setup for user fetch. Nothing fancy needs to happen here. */
 browser.webRequest.onBeforeRequest.addListener((details) => {
   /* Little bit frustrating that we can't just wait for the request to finish
    * and look at the body. This method should likely be simplified a bit. */
