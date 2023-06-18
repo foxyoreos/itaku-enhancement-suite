@@ -8,6 +8,10 @@
     "48": "icons/border-48.png"
   },
 
+  "host_permissions": [
+    "*://*.itaku.ee/*"
+  ],
+
   "permissions": [
     "*://*.itaku.ee/*",
     "webRequestBlocking",
@@ -31,7 +35,7 @@
       "src/settings/content-warnings.css",
       "src/components/post-warnings.css"
     ],
-    "run_at": "document_idle"
+    "run_at": "document_start"
   }],
 
   "browser_specific_settings": {

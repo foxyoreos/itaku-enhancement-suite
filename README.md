@@ -47,7 +47,7 @@ show the user profile link and give you the option to "open link in new tab".
 
 ## Future Planned Features
 
-### Notification Context
+### Notification Context Improvements
 
 Continue iterating on the UI for expanded notifications:
 
@@ -78,6 +78,10 @@ blocking the individual tags.
 
 - NSFW ratings should be combinable with tag blocks. You should be able to block
 a ``yoshi`` tag from NSFW images without blocking it from SFW images.
+
+### Comic View
+
+Itaku's default image viewer loads the XL version of the currently selected image. This is large enough that in most cases text would be easily readable. However, the image is sized down in the HTML/CSS so that comics with text are cumbersome to read. Depending on how complicated the page HTML is, it might be possible to make a better "comic view" for longform comic reading without making any additional requests to the server at all.
 
 ## Design
 
