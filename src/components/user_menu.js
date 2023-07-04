@@ -28,10 +28,12 @@
       type: 'get_user'
     });
 
-    user = response.content;
+    if (response) {
+      user = response.content;
+    }
 
     /* If we're too early, wait a bit and try again. */
-    if (!user.id || !user.username) {
+    if (!user || !user.id || !user.username) {
       setTimeout(getUser, 250);
       return;
     }
