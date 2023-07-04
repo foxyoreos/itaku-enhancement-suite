@@ -16,6 +16,11 @@ const user = { /* Stored in extension sessionStorage (this is pretty fragile, bu
   username: null,
 };
 
+/* Stored purely locally, used to bootstrap sessionStorage for new tabs. */
+const syncs = {
+  contentCache: {},
+}
+
 /* Feed URLs that need to be checked for warnings. Add additional entry points here.
  * If the structure varries from typical response objects, add additional handling
  * code in "handleContentWarnings"
@@ -98,6 +103,22 @@ async function init () {
         break;
       case 'get_user':
         response({ type: 'response', content: user });
+        break;
+      case 'sync':
+
+        /* Note that this still doesn't guarantee that session data will be
+         * shared between every tab. But it should reduce the number of
+         * occurances at least. */
+        const missing =
+          Object.keys(syncs.contentCache)
+          .reduce((result, key) => {
+            if (evt.content[key]) { return result; }
+            result.push(syncs.contentCache[key]);
+            return result;
+          }, []);
+
+        syncs.contentCache = { ...syncs.contentCache, ...evt.content };
+        response({ type: 'response', content: missing });
         break;
       }
     };
@@ -227,20 +248,19 @@ function cacheContentObject(result) {
    * because even if they don't, we still want to mark that
    * content as fetched so the front-end doesn't try to re-fetch
    * it a second time. */
+  syncs.contentCache[result.id] = {
+    loading: false,
+    id: result.id,
+    title: result.title,
+    description: truncatedDescription,
+  };
+
   ports.forEach((port) => {
     port.postMessage({
       type: 'cache',
-      content: [{
-        loading: false,
-        id: result.id,
-        title: result.title,
-        description: truncatedDescription,
-      }],
+      content: [syncs.contentCache[result.id]],
     });
   });
-
-  /* TODO determine if it belongs to the user. */
-  /* TODO also cache user comments */
 }
 
 /* Different object types on Itaku are embedded within each other. It's often

@@ -4,18 +4,70 @@
   /* ------------- SETUP/CACHES ------------- */
   /* ---------------------------------------- */
 
-  const contentCache = JSON.parse(
-    sessionStorage.getItem('ItakuEnhancedContentCache')) || {};
+  let contentCache = {};
+  let sessionAge = 0;
+  let lastFetch = 0;
+  function loadContentCache () {
+    /* Throttle to one reload every half a second, just in case there are performance implications. */
+    const date = new Date().valueOf();
+    if (date - lastFetch < 500) { return; }
+
+    lastFetch = date;
+    sessionAge = Number.parseInt(
+      sessionStorage.getItem('ItakuEnhancedContentCacheAge')) || 0;
+    contentCache = JSON.parse(
+      sessionStorage.getItem('ItakuEnhancedContentCache')) || {};
+  }
 
   function saveContentCache () {
+    sessionAge = new Date().valueOf(); /* TODO: this is mostly useless */
+    sessionStorage.setItem('ItakuEnhancedContentCacheAge', sessionAge);
     sessionStorage.setItem('ItakuEnhancedContentCache', JSON.stringify(contentCache));
   }
 
-  const port = browser.runtime.connect({ name: 'notifications-port' });
+  /* Session storage isn't shared between new tabs in all situations.
+   * As part of fetch, we should also query the content script to see
+   * if we can pull down data from another tab's cache.
+   *
+   * TODO: check to see if this will break multiple accounts.
+   * TODO: this is still imperfect, but I'm not sure of a better
+   * way to handle session state between tabs. */
+  async function syncContent () {
+    const response = await browser.runtime.sendMessage({
+      content: contentCache,
+      type: 'sync',
+    });
+
+    /* Don't trigger a sessionStorage write if we don't need to (new content or newer date) */
+    if (response && response.content.length) {
+      response.content.forEach((item) => {
+        contentCache[item.id] = item;
+      });
+
+      saveContentCache();
+    }
+  }
+
+  /* Refresh the content cache whenever the tab is loaded. This prevents
+   * us from running into problems where you load notifications and then swap to a different tab.  */
+  loadContentCache();
+  syncContent();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      loadContentCache();
+      syncContent();
+    }
+  });
+
+  const tabId = new Date().valueOf();
+  const port = browser.runtime.connect({
+    name: `notifications-port-${tabId}`
+  });
+
   port.onMessage.addListener((evt, sender, response) => {
-    console.log('got message');
     switch (evt.type) {
     case 'cache':
+      loadContentCache(); /* Always reload the cache before trying to save or add new items. */
       evt.content.forEach((item) => {
         contentCache[item.id] = item;
       });
@@ -24,10 +76,17 @@
 
       /* Update UI (if possible). Try to be Reactive about things. */
       extendNotifications(notificationsSubContainer);
-
       break;
     }
   });
+
+  port.onDisconnect.addListener((evt, sender, response) => {
+
+  });
+
+  /* Send our local cache and see if we're missing anything. */
+
+
 
   /* ------------------------------------------- */
   /* ------------ COMPONENT LOGIC -------------- */
@@ -97,7 +156,12 @@
      * only trigger one fetch, because we get all of the comments for that post
      * as a batch operation. */
     if (fetches[url]) {
-      console.log(`Skipping ${url} (fetch already in progress)`)
+      console.log(`Skipping ${url} (fetch already in progress)`);
+
+      /* Sometimes we can get stuck with pending fetches though. Because
+       * the fetch queue handles deduplicating just fine on its own, we
+       * might as well re-trigger it. */
+      runFetchQueue();
       return;
     }
 
@@ -110,8 +174,16 @@
        * automatically and we refresh the UI when that happens. So just making
        * the request is enough. */
       console.log('fetching info for: ', url);
-      const response = await fetch(`https://itaku.ee${url}`);
-      console.log(url, 'response recieved');
+      try {
+        const response = await fetch(`https://itaku.ee${url}`);
+        console.log(url, 'response recieved');
+      } catch (err) {
+        console.log(err);
+        console.log('Retrying: ');
+        setTimeout(() => {
+          fetchResources (type, id, commentId);
+        }, 500);
+      }
     });
 
     /* Start request. */
