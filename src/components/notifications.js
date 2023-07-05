@@ -86,6 +86,19 @@
 
   /* Send our local cache and see if we're missing anything. */
 
+  /* ------------------------------------------- */
+  /* ---------- INTERFACE HELPERS -------------- */
+  /* ------------------------------------------- */
+  function icon (type) {
+    const element = document.createElement('mat-icon');
+    element.classList = 'mat-icon material-icons mat-icon-inline mat-icon-no-color';
+    element.setAttribute('inline', 'True');
+    element.setAttribute('aria-hidden', 'true');
+    element.setAttribute('data-mat-icon-type', 'font');
+    element.innerText = type;
+
+    return element;
+  }
 
 
   /* ------------------------------------------- */
@@ -229,10 +242,42 @@
         return;
       }
 
-      const label = target.querySelector('.mat-hint');
-      label.setAttribute('data-itakuenhanced-processed', "true");
-      label.innerText = cache.title || cache.description;
-      // label.innerText = label.innerText + ': Replaced description via extension.';
+      /* Get the container */
+      /* TODO: this still seems fragile... */
+      const labelContainer = target.querySelector('div > span');
+      labelContainer.setAttribute('data-itakuenhanced-processed', 'true');
+
+      /* TODO: this is unused, but there's stuff I want to do with it UwU */
+      // const name = labelContainer.querySelector('a.accent-link');
+      // const base = labelContainer?.querySelector('span')?.innerText;
+      // if (!base) { return; }
+
+      // const matches = base.match(/(.*) your ([a-z]+)[!]*/);
+      // const prefix = matches[1];
+      // const notificationType = matches[2];
+      // if (!prefix || !notificationType) { return; }
+
+      // const indicatorType = (() => {
+      //   switch (notificationType) {
+      //   case 'comment': return 'comment';
+      //   case 'image': return 'image';
+      //   case 'post': return 'edit';
+      //   default: return null;
+      //   }
+      // })();
+
+      // if (!indicatorType) { return; }
+      // const indicator = icon(indicatorType);
+
+      if (labelContainer.querySelector('.ItakuEnhanced--notificationDescription')) {
+        return;
+      }
+
+      const description = document.createElement('div');
+      description.setAttribute('data-itakuenhanced-processed', 'true');
+      description.classList = 'ItakuEnhanced--notificationDescription';
+      description.innerText = cache.title || cache.description;
+      labelContainer.appendChild(description);
     });
   }
 

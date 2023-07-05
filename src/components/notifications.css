@@ -1,0 +1,7 @@
+span[data-itakuenhanced-processed="true"] + br {
+    display: none;
+}
+
+.ItakuEnhanced--notificationDescription br {
+    display: none;
+}
