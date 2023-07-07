@@ -9,6 +9,8 @@
 const settings = {
   positive_regexes: [],
   negative_regexes: [],
+  hide_follower_counts: true,
+  expanded_notifications: true,
 };
 
 const user = { /* Stored in extension sessionStorage (this is pretty fragile, but probably fine) */
@@ -57,8 +59,11 @@ async function save () {
 }
 
 async function load () {
-  settings.positive_regexes = (await browser.storage.sync.get('positive_regexes')).positive_regexes || [];
-  settings.negative_regexes = (await browser.storage.sync.get('negative_regexes')).negative_regexes || [];
+  const storageSettings = await browser.storage.sync.get();
+  Object.assign(settings, storageSettings);
+
+  settings.positive_regexes = settings.positive_regexes || [];
+  settings.negative_regexes = settings.negative_regexes || [];
   const userObj = JSON.parse(sessionStorage.getItem('ItakuEnhancedUserMeta')) || {};
   user.id = userObj.id;
   user.username = userObj.username;

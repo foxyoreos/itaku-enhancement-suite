@@ -48,41 +48,49 @@
     }
   }
 
-  /* Refresh the content cache whenever the tab is loaded. This prevents
-   * us from running into problems where you load notifications and then swap to a different tab.  */
+  /* Refresh the content cache (and connection to the content script) whenever the tab is loaded. This prevents
+   * us from running into problems where you load notifications and then swap to a different tab. It also
+   * prevents problems where the scripts wait so long or sleep that their ports and listeners get removed. */
   loadContentCache();
   syncContent();
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       loadContentCache();
+      connectPort();
+      appObserver.disconnect();
+      appObserver.observe(document.body, { childList: true });
       syncContent();
     }
   });
 
-  const tabId = new Date().valueOf();
-  const port = browser.runtime.connect({
-    name: `notifications-port-${tabId}`
-  });
 
-  port.onMessage.addListener((evt, sender, response) => {
-    switch (evt.type) {
-    case 'cache':
-      loadContentCache(); /* Always reload the cache before trying to save or add new items. */
-      evt.content.forEach((item) => {
-        contentCache[item.id] = item;
-      });
+  function connectPort () {
+    const tabId = new Date().valueOf();
+    const port = browser.runtime.connect({
+      name: `notifications-port-${tabId}`
+    });
 
-      saveContentCache();
+    let listener = (evt, sender, response) => {
+      switch (evt.type) {
+      case 'cache':
+        loadContentCache(); /* Always reload the cache before trying to save or add new items. */
+        evt.content.forEach((item) => {
+          contentCache[item.id] = item;
+        });
 
-      /* Update UI (if possible). Try to be Reactive about things. */
-      extendNotifications(notificationsSubContainer);
-      break;
+        saveContentCache();
+
+        /* Update UI (if possible). Try to be Reactive about things. */
+        extendNotifications(notificationsSubContainer);
+        break;
+      }
     }
-  });
 
-  port.onDisconnect.addListener((evt, sender, response) => {
-
-  });
+    port.onMessage.addListener(listener);
+    port.onDisconnect.addListener((evt, sender, response) => {
+      port.onMessage.removeListener(listener);
+    });
+  }
 
   /* Send our local cache and see if we're missing anything. */
 
@@ -118,7 +126,10 @@
    * delay on new requests because... why not? It just slows things
    * down a little bit more and give a little more breathing room. */
   function runFetchQueue () {
-    if (fetchQueue.length === 0) { return; }
+    if (fetchQueue.length === 0) {
+      return;
+    }
+
     if (currentFetches > MAX_FETCHES) {
       console.log('Deferring fetch, queue full...');
       return;
@@ -129,17 +140,21 @@
     next().then(() => {
       setTimeout(() => {
         --currentFetches;
-        if (currentFetches < MAX_FETCHES) {
-          runFetchQueue();
-        }
+        runFetchQueue();
       }, 200);
 
     }, () => {
         setTimeout(() => {
           --currentFetches;
-          if (currentFetches < MAX_FETCHES) {
-            runFetchQueue();
+          next.tries = next.tries || 0;
+          ++next;
+
+          /* Avoid accidentally DDOSing the site. You get 3 tries max. */
+          if (next.tries < 3) {
+            fetchQueue.push(next);
           }
+
+          runFetchQueue();
         }, 200);
     });
 
@@ -191,11 +206,7 @@
         const response = await fetch(`https://itaku.ee${url}`);
         console.log(url, 'response recieved');
       } catch (err) {
-        console.log(err);
-        console.log('Retrying: ');
-        setTimeout(() => {
-          fetchResources (type, id, commentId);
-        }, 500);
+        console.log(err); /* This will get automatically retried. */
       }
     });
 
@@ -387,5 +398,7 @@
     parentObserver.observe(popup, { childList: true });
     appObserver.disconnect();
   });
+
+  connectPort();
   appObserver.observe(document.body, { childList: true });
 })();
