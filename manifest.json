@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Itaku Enhancement Suite",
-  "version": "0.3.4",
+  "version": "0.4",
 
   "description": "A collection of minor site enhancements for Itaku, the furry website",
   "icons": {
@@ -34,7 +34,9 @@
     "css": [
       "src/settings/content-warnings.css",
       "src/components/post-warnings.css",
-      "src/components/follower-count.css"
+      "src/components/follower-count.css",
+      "src/components/notifications.css",
+      "src/components/extension-indicator.css"
     ],
     "run_at": "document_idle"
   }],
