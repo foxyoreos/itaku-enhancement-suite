@@ -1,0 +1,19 @@
+section {
+    font-family: sans-serif;
+    background-color: rgb(80, 80, 80);
+    padding: 0 0.5em;
+    border-radius: 10px;
+    margin-right: 1em;
+    margin-bottom: 1em;
+    padding-bottom: 0.25em;
+    min-width: 40em;
+}
+
+h2 {
+    font-size: 1.2em;
+}
+
+#description {
+
+    margin-bottom: 1em;
+}

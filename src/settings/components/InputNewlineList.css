@@ -1,0 +1,17 @@
+.input-box {
+    width: 100%;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    width: 100%;
+}
+
+textarea {
+    display: block;
+    width: calc(100% - 1em);
+    height: 5em;
+    margin-bottom: 0.75em;
+    resize: vertical;
+}

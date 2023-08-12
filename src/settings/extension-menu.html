@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="extension-menu.css"/>
+
+    <!-- Layout -->
+    <template id="layout-section">
+      <link rel="stylesheet" href="components/LayoutSection.css">
+      <section>
+        <h2 id="title">Section Title</h2>
+        <div id="description"></div>
+        <slot name="control">
+      </section>
+    </template>
+
+    <!-- Input controls -->
+    <template id="input-toggle">
+      <link rel="stylesheet" href="components/InputToggle.css">
+      <div class="input-box">
+        <label id="label" for="input">Input Label</label>
+        <input id="input" type="checkbox"/>
+      </div>
+    </template>
+
+    <template id="input-newline-list">
+      <link rel="stylesheet" href="components/InputNewlineList.css">
+      <label id="label" for="input">Input Label</label>
+      <textarea id="input" type="textarea"></textarea>
+    </template>
+
+  </head>
+
+  <body>
+    <main className="ItakuEnhanced--extensionMenu">
+      <h1>Itaku Enhancement Suite</h1>
+      <a href="https://codeberg.org/foxyoreos/itaku-enhancement-suite/wiki">Help/Wiki Link</a>
+    </main>
+
+    <layout-section title="Content Warning Regex Filters"
+                    description="Define positive and negative filters for content warnings. Content warnings will be shown by default unless they match a positive filter, in which case they will be hidden. Hidden content warnings are also checked against negative filters, in which case they will be re-shown. Broken/malformed regex filters and blank lines will be ignored.">
+      <input-newline-list slot="control"
+                          label="Positive Filters"
+                          hint="Ignore content warnings if any of these regex match (one per line)"
+                          setting="positive_regexes"></input-newline-list>
+      <input-newline-list slot="control"
+                          label="Negative Filters"
+                          hint="Re-show content warnings if any of these regex match (one per line)"
+                          setting="negative_regexes"></input-newline-list>
+    </layout-section>
+
+    <layout-section title="Miscellaneous">
+      <input-toggle slot="control"
+                    label="Use Enhanced Image Viewer (BETA)"
+                    setting="hide-follower-counts"></input-toggle>
+
+      <input-toggle slot="control"
+                    label="Hide All Follower Counts"
+                    setting="hide-follower-counts"></input-toggle>
+    </layout-section>
+
+    <script src="extension-menu.js" type="module"></script>
+  </body>
+</html>

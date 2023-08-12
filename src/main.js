@@ -52,11 +52,6 @@ const USER_CALLS = {
   types: ['xmlhttprequest']
 };
 
-const NOTIFICATION_CALLS = {
-  urls: ['https://itaku.ee/api/notifications/?*'],
-  types: ['xmlhttprequest']
-};
-
 /* Persist settings and cache (TODO we should watch out for race conditions with "load" here) */
 async function save () {
   browser.storage.sync.set(settings);
@@ -73,6 +68,10 @@ async function load () {
   user.id = userObj.id;
   user.username = userObj.username;
 }
+
+browser.storage.onChanged.addListener(() => {
+  load();
+});
 
 /* ------------------------------------------------------ */
 /* --------------------- ENTRY LOGIC -------------------- */
@@ -209,30 +208,6 @@ browser.webRequest.onBeforeRequest.addListener((details) => {
   }
 }, USER_CALLS, ['blocking']);
 
-/* Quick bug fix and prep to get rid of the user account fetch possibly... if a
- * notification request comes in, it should have the user attached to it. */
-browser.webRequest.onBeforeRequest.addListener((details) => {
-  let filter = browser.webRequest.filterResponseData(details.requestId);
-  let decoder = new TextDecoder('utf-8');
-  let str = '';
-  filter.ondata = (e) => {
-    str += decoder.decode(e.data, { stream: true });
-    filter.write(e.data);
-  }
-
-  filter.onstop = (e) => {
-    try {
-      const json = JSON.parse(str);
-      (() => { /* TODO isn't there like a ?. operator now or something? */
-        if (!json || !json.results || !json.results.length) { return; }
-        user.id = json.results[0].owner;
-        sessionStorage.setItem('ItakuEnhancedUserMeta', JSON.stringify(user));
-        console.log('Re-set user ID: ', user.id);
-      })();
-    } catch (err) { console.log(err); /* We always want to return the request no matter what */
-    } finally { filter.close(); }
-  }
-}, NOTIFICATION_CALLS, ['blocking']);
 
 /* ------------------------------------------------------ */
 /* ------------------ EXTENSION LOGIC ------------------- */
@@ -344,32 +319,27 @@ function handleContentObject (details) {
   };
 
   filter.onstop = (e) => {
-    try { /* TODO should also try to check the status here? */
-      const json = JSON.parse(str);
+    const json = JSON.parse(str);
 
-      /* Most feeds are structured around "results", but we also check recently
-       * starred/uploaded lists, which use different keys. For right now, we ignore
-       * "latest_active_commissions" because it's not clear content warnings will be
-       * applicable to them. */
-      const results = json.results || [];
-      const latest_gallery_images = json.latest_gallery_images || [];
-      const recently_liked_images = json.recently_liked_images || [];
-      const embedded_images = json.gallery_images || [];
-      const pinned_item = json.pinned_item || null;
+    /* Most feeds are structured around "results", but we also check recently
+     * starred/uploaded lists, which use different keys. For right now, we ignore
+     * "latest_active_commissions" because it's not clear content warnings will be
+     * applicable to them. */
+    const results = json.results || [];
+    const latest_gallery_images = json.latest_gallery_images || [];
+    const recently_liked_images = json.recently_liked_images || [];
+    const embedded_images = json.gallery_images || [];
+    const pinned_item = json.pinned_item || null;
 
-      /* TODO there could be better checks here to see which are applicable. */
-      recurseContentObject(json); /* Check itself (for direct posts) */
-      if (pinned_item) { recurseContentObject(pinned_item); }
-      results.forEach((obj) => recurseContentObject(obj));
-      latest_gallery_images.forEach((obj) => recurseContentObject(obj));
-      recently_liked_images.forEach((obj) => recurseContentObject(obj));
-      embedded_images.forEach((obj) => recurseContentObject(obj));
+    /* TODO there could be better checks here to see which are applicable. */
+    recurseContentObject(json); /* Check itself (for direct posts) */
+    if (pinned_item) { recurseContentObject(pinned_item); }
+    results.forEach((obj) => recurseContentObject(obj));
+    latest_gallery_images.forEach((obj) => recurseContentObject(obj));
+    recently_liked_images.forEach((obj) => recurseContentObject(obj));
+    embedded_images.forEach((obj) => recurseContentObject(obj));
 
-      filter.write(encoder.encode(JSON.stringify(json)));
-
-    } catch (err) {
-      filter.write(encoder.encode(str));
-    }
+    filter.write(encoder.encode(JSON.stringify(json)));
 
     filter.close();
   }

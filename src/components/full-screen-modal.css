@@ -1,0 +1,224 @@
+
+
+/* TODO: this is built around the modal overlay, and I'm not sure if it will be generalizable to*/
+/* the regular view. */
+
+/* Element | https://itaku.ee/ */
+
+.ItakuEnhanced--fullScreenPreviews app-image-dialog {
+    top: calc(64px + 8px);
+    left: 8px;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+
+.ItakuEnhanced--fullScreenPreviews app-image-detail,
+.ItakuEnhanced--fullScreenPreviews app-image-detail .container {
+    max-width: 100%;
+    height: 100%;
+    width: 100%;
+}
+
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card {
+    height: calc(100vh - 64px - 16px); /* hardcoded height of the header */
+}
+
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card .img-wrapper,
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card .img-wrapper .mat-card-image {
+    height: 100%;
+}
+
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card .img-wrapper .mat-card-image {
+    object-fit: contain;
+    max-height: 100%;
+}
+
+/* TODO this is pretty fragile */
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card > :last-child:not(.mat-card-footer) {
+    position: absolute;
+    height: 10em;
+    padding-left: 2em;
+    background: inherit;
+    padding-right: 3em;
+    height: 5em;
+    top: 0;
+    width: 8em;
+    overflow: hidden;
+}
+
+
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card > :last-child:not(.mat-card-footer):hover,
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card > :last-child:not(.mat-card-footer):focus,
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card > :last-child:not(.mat-card-footer):focus-within {
+  width: 48em;
+  /*! display: block; */
+  visibility: visible;
+  height: 100%;
+  overflow-y: scroll;
+  padding-right: 2em;
+}
+
+.ItakuEnhanced--fullScreenPreviews .next-img-btn[_ngcontent-serverApp-c192] {
+  z-index: 100;
+}
+
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card > :last-child:not(.mat-card-footer):hover .mat-card-header,
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card > :last-child:not(.mat-card-footer):focus .mat-card-header,
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card > :last-child:not(.mat-card-footer):focus-within .mat-card-header {
+    background: inherit;
+    visibility: visible;
+    position: fixed;
+}
+
+.ItakuEnhanced--fullScreenPreviews app-image-detail mat-card > :last-child:not(.mat-card-footer):hover .mat-card-avatar {
+  visibility: visible;
+  display: block;
+}
+
+
+/* .mat-card-header { */
+/*   position: fixed; */
+/*   background: inherit; */
+/* } */
+
+/* Element | https://itaku.ee/ */
+
+/* div.mat-card-avatar { */
+/*   display: block; */
+/*   visibility: visible; */
+/* } */
+
+/* Inline #56 | https://itaku.ee/images/394685 */
+
+.mat-card > :last-child:not(.mat-card-footer):focus, .mat-card-content > :last-child:not(.mat-card-footer):focus {
+  /* display: block; */
+  height: 100%;
+}
+
+/* Element | https://itaku.ee/ */
+
+div.w-100:nth-child(1) > div:nth-child(2) {
+  margin-top: 8em;
+}
+
+.mat-card > :last-child:not(.mat-card-footer):hover, .mat-card-content > :last-child:not(.mat-card-footer):hover {
+  overflow-y: scroll;
+}
+
+.mat-card > :last-child:not(.mat-card-footer):focus-within .info-wrapper-gt-xs, .mat-card-content > :last-child:not(.mat-card-footer):focus-within .info-wrapper-gt-xs {
+  visibility: visible;
+}
+
+
+
+/* #cdk-overlay-3 { */
+/*   /\* min-width: 320px; *\/ */
+/*   width: 100vw; */
+/*   height: 100vh; */
+/* } */
+
+/* Element | https://itaku.ee/ */
+
+/* .mat-dialog-content > app-image-detail:nth-child(1) { */
+/*   width: 100vw; */
+/* } */
+
+/* styles.995a1928a37c41ab955f.css | https://itaku.ee/styles.995a1928a37c41ab955f.css */
+
+.frameless-dialog-content {
+  /* max-width: 98vw !important; */
+}
+
+/* .rain-dusk-theme .container { */
+/*   /\* max-width: 1200px; *\/ */
+/*   width: 100%; */
+/* } */
+
+.container {
+  /* max-width: 1200px; */
+}
+
+/* Element | https://itaku.ee/ */
+
+/* Element | https://itaku.ee/ */
+
+/* Inline #14 | https://itaku.ee/images/394685 */
+
+.card[_ngcontent-serverApp-c192] {
+  /* overflow: hidden; */
+  overflow: visible;
+}
+
+
+.main-img[_ngcontent-serverApp-c192] {
+  /* max-height: 62vh; */
+  /* max-height: 100%; */
+  /* max-height: 100vh; */
+}
+
+
+.change-img-btn[_ngcontent-serverApp-c192] {
+  height: 100%;
+}
+
+/* Element | https://itaku.ee/ */
+
+.mat-dialog-content > app-image-detail:nth-child(1) > div:nth-child(1) {
+  overflow: visible;
+}
+
+/* Inline #51 | https://itaku.ee/images/394685 */
+
+.mat-dialog-content {
+  /* overflow: auto; */
+}
+
+/* Inline #52 | https://itaku.ee/images/394685 */
+
+.mat-dialog-content[_ngcontent-serverApp-c193] {
+  /* overflow-x: hidden !important; */
+}
+
+/* Inline #55 | https://itaku.ee/images/394685 */
+
+div {
+}
+
+div {
+}
+
+div {}
+
+mat-card {
+}
+
+.mat-card > :last-child:not(.mat-card-footer):hover, .mat-card-content > :last-child:not(.mat-card-footer):hover {
+  width: 48em;
+}
+
+.mat-card > :last-child:not(.mat-card-footer):hover .info-wrapper-gt-xs, .mat-card-content > :last-child:not(.mat-card-footer):hover .info-wrapper-gt-xs {
+  /* display: none; */
+}
+
+.mat-card-header.ng-star-inserted {
+}
+
+.mat-card > :last-child:not(.mat-card-footer):hover .info-wrapper-gt-xs, .mat-card-content > :last-child:not(.mat-card-footer):hover .info-wrapper-gt-xs {
+  /* display: none; */
+  display: block;
+}
+
+
+.mat-card > :last-child:not(.mat-card-footer) .info-wrapper-gt-xs, .mat-card-content > :last-child:not(.mat-card-footer) .info-wrapper-gt-xs {
+  visibility: hidden;
+}
+
+.mat-card > :last-child:not(.mat-card-footer):hover .info-wrapper-gt-xs, .mat-card-content > :last-child:not(.mat-card-footer):hover .info-wrapper-gt-xs {
+  /* display: block; */
+  visibility: visible;
+}
+
+.mat-card > :last-child:not(.mat-card-footer):hover, .mat-card-content > :last-child:not(.mat-card-footer):hover {
+  /* height: 100%; */
+}
