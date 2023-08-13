@@ -250,8 +250,8 @@ function cacheContentObject(result) {
 
   /* Handle both comments and images/posts */
   const description = result.description || result.content || '';
-  const truncatedDescription = description.slice(0, 50) +
-        (description.length > 50 ? '...' : '');
+  const truncatedDescription = description.slice(0, 250) +
+        (description.length > 250 ? '...' : '');
 
   /* We don't check to see if a title/description exists
    * because even if they don't, we still want to mark that

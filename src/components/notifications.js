@@ -257,6 +257,7 @@
       /* TODO: this still seems fragile... */
       const labelContainer = target.querySelector('div > span');
       labelContainer.setAttribute('data-itakuenhanced-processed', 'true');
+      labelContainer.setAttribute('title', cache.title || cache.description);
 
       /* TODO: this is unused, but there's stuff I want to do with it UwU */
       // const name = labelContainer.querySelector('a.accent-link');
@@ -287,7 +288,12 @@
       const description = document.createElement('div');
       description.setAttribute('data-itakuenhanced-processed', 'true');
       description.classList = 'ItakuEnhanced--notificationDescription';
-      description.innerText = cache.title || cache.description;
+
+      let displayDescription = cache.title || cache.description;
+      displayDescription = displayDescription.slice(0, 100) +
+        (displayDescription.length > 100 ? '...' : '');
+
+      description.innerText = displayDescription;
       labelContainer.appendChild(description);
     });
   }

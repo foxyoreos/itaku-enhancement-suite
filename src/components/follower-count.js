@@ -8,11 +8,8 @@
     setClass(settings.hide_follower_counts);
   }
 
-  browser.runtime.onMessage.addListener((data, response) => {
-    if (data.type !== 'settings_update') { return; }
-    if (data.content.hide_follower_counts == null) { return; }
-
-    setClass(data.content.hide_follower_counts);
+  browser.storage.onChanged.addListener(() => {
+    getSettings();
   });
 
   document.addEventListener('visibilitychange', () => {

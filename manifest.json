@@ -27,13 +27,16 @@
     "matches": ["*://*.itaku.ee/*"],
     "js": [
       "src/components/notifications.js",
-      "src/components/user_menu.js"
+      "src/components/user_menu.js",
+      "src/components/follower-count.js",
+      "src/components/full_screen_modal.js"
     ],
     "css": [
       "src/components/post-warnings.css",
       "src/components/notifications.css",
       "src/components/extension-indicator.css",
-      "src/components/follower-count.css"
+      "src/components/follower-count.css",
+      "src/components/full-screen-modal.css"
     ],
     "run_at": "document_idle"
   }],
