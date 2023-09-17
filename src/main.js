@@ -11,6 +11,9 @@ const settings = {
   negative_regexes: [],
   hide_follower_counts: true,
   expanded_notifications: true,
+
+  /* Toggleable fixes */
+  fix_unescaped_queries: true,
 };
 
 const user = { /* Stored in extension sessionStorage (this is pretty fragile, but probably fine) */
@@ -41,6 +44,10 @@ const CONTENT_FEEDS = {
     /* These links are used more for direct fetch caching, rather than content warnings */
     'https://itaku.ee/api/*/comments/?*', /* Comment fetch */
     'https://itaku.ee/api/galleries/images/*/',
+
+    /* These are used for URL fixes, but are generally harmless to run other logic on
+     * since they follow the same basic structure as everything else. */
+    'https://itaku.ee/api/tags/detailed/?*'
   ],
   types: ['xmlhttprequest']
 };
@@ -61,6 +68,7 @@ async function save () {
 async function load () {
   const storageSettings = await browser.storage.sync.get();
   Object.assign(settings, storageSettings);
+  save(); /* After loading new default settings, save them. */
 
   settings.positive_regexes = settings.positive_regexes || [];
   settings.negative_regexes = settings.negative_regexes || [];
@@ -309,6 +317,7 @@ function recurseContentObject (result) {
  *
  * This is all mostly handled by calling into other functions (see above) */
 function handleContentObject (details) {
+  let blockingResponse = fixUnescapedAnds(details);
   let filter = browser.webRequest.filterResponseData(details.requestId);
   let decoder = new TextDecoder('utf-8');
   let encoder = new TextEncoder();
@@ -344,5 +353,31 @@ function handleContentObject (details) {
     filter.close();
   }
 
-  return {};
+  return blockingResponse;
+}
+
+function fixUnescapedAnds (details, blockingResponse = {}) {
+  if (!settings.fix_unescaped_queries) { return blockingResponse; }
+
+  const url = blockingResponse.redirectURL || details.url;
+  if (url.slice(0, 21) !== 'https://itaku.ee/api/') {
+    return blockingResponse;
+  }
+
+  let needsRedirect = false;
+  const split = url.split('&');
+  const redirect = split[0] + split.slice(1).map(str => {
+    if (!str) { return ''; }
+    if (str.indexOf('=') === -1) {
+      needsRedirect = true;
+      return encodeURIComponent(`&${str}`);
+    }
+    return `&${str}`;
+  }).join('');
+
+  if (needsRedirect) {
+    blockingResponse.redirectUrl = redirect;
+  }
+
+  return blockingResponse;
 }

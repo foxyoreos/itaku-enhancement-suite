@@ -6,9 +6,7 @@ import InputNewlineList from "./components/InputNewlineList.js";
 (async function () {
 
   /* Load */
-  console.log('what is happening here: ');
   const settings = await browser.storage.sync.get();
-  console.log(settings);
   settings.positive_regexes = settings.positive_regexes || [];
   settings.negative_regexes = settings.negative_regexes || [];
 
@@ -21,7 +19,6 @@ import InputNewlineList from "./components/InputNewlineList.js";
       settings[attribute] = value;
 
       /* We can actually just set this directly now :3 */
-      console.log('setting: ', attribute, value);
       browser.storage.sync.set(settings);
     });
 
