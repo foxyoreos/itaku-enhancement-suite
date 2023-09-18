@@ -9,9 +9,17 @@
     <template id="layout-section">
       <link rel="stylesheet" href="components/LayoutSection.css">
       <section>
-        <h2 id="title">Section Title</h2>
-        <div id="description"></div>
-        <slot name="control">
+        <input id="collapse"
+               type="checkbox"
+               aria-label="Expand Category"
+               checked />
+        <label for="collapse">
+          <h2 id="title">Section Title</h2>
+        </label>
+        <div class="body">
+          <div id="description"></div>
+          <slot name="control">
+        </div>
       </section>
     </template>
 
@@ -29,44 +37,55 @@
       <label id="label" for="input">Input Label</label>
       <textarea id="input" type="textarea"></textarea>
     </template>
-
   </head>
 
   <body>
     <main className="ItakuEnhanced--extensionMenu">
       <h1>Itaku Enhancement Suite</h1>
       <a href="https://codeberg.org/foxyoreos/itaku-enhancement-suite/wiki">Help/Wiki Link</a>
+
+      <layout-section title="Content Warning Regex Filters"
+                      description="Define positive and negative filters for content warnings. Content warnings will be shown by default unless they match a positive filter, in which case they will be hidden. Hidden content warnings are also checked against negative filters, in which case they will be re-shown. Broken/malformed regex filters and blank lines will be ignored.">
+        <input-newline-list slot="control"
+                            label="Positive Filters"
+                            hint="Ignore content warnings if any of these regex match (one per line)"
+                            setting="positive_regexes"></input-newline-list>
+        <input-newline-list slot="control"
+                            label="Negative Filters"
+                            hint="Re-show content warnings if any of these regex match (one per line)"
+                            setting="negative_regexes"></input-newline-list>
+      </layout-section>
+
+      <layout-section title="Blocklists"
+                      description="Itaku's built-in blocklist alternates between hiding content completely and just putting warnings in front of it. This section supplies options to make the blocklist behavior stricter and more consistent.">
+        <input-toggle slot="control"
+                      label="Always hide blocklisted content (never just show a warning)"
+                      setting="always_hide_blocklists"></input-toggle>
+        <input-toggle slot="control"
+                      label="Bubble blocklists (ex Block posts that contain blocklisted images)"
+                      setting="bubble_blocklists"></input-toggle>
+      </layout-section>
+
+      <layout-section title="Miscellaneous Features">
+        <input-toggle slot="control"
+                      label="Use Enhanced Image Viewer (BETA)"
+                      setting="use_enhanced_previews"></input-toggle>
+
+        <input-toggle slot="control"
+                      label="Hide All Follower Counts"
+                      setting="hide_follower_counts"></input-toggle>
+      </layout-section>
+
+      <layout-section title="Experimental Fixes"
+                      description="These are bugfixes that Itaku hasn't gotten around to implementing itself yet. If in doubt, leave these on, but they can be toggled off if you run into buggy behavior or if the fixes have unintended side effects.">
+        <input-toggle slot="control"
+                      label="Fix tag search for & symbol"
+                      setting="fix_unescaped_queries"></input-toggle>
+      </layout-section>
+
+
+
     </main>
-
-    <layout-section title="Content Warning Regex Filters"
-                    description="Define positive and negative filters for content warnings. Content warnings will be shown by default unless they match a positive filter, in which case they will be hidden. Hidden content warnings are also checked against negative filters, in which case they will be re-shown. Broken/malformed regex filters and blank lines will be ignored.">
-      <input-newline-list slot="control"
-                          label="Positive Filters"
-                          hint="Ignore content warnings if any of these regex match (one per line)"
-                          setting="positive_regexes"></input-newline-list>
-      <input-newline-list slot="control"
-                          label="Negative Filters"
-                          hint="Re-show content warnings if any of these regex match (one per line)"
-                          setting="negative_regexes"></input-newline-list>
-    </layout-section>
-
-    <layout-section title="Miscellaneous">
-      <input-toggle slot="control"
-                    label="Use Enhanced Image Viewer (BETA)"
-                    setting="use_enhanced_previews"></input-toggle>
-
-      <input-toggle slot="control"
-                    label="Hide All Follower Counts"
-                    setting="hide_follower_counts"></input-toggle>
-    </layout-section>
-
-    <layout-section title="Experimental Fixes">
-      <input-toggle slot="control"
-                    label="Fix tag search for & symbol"
-                    setting="fix_unescaped_queries"></input-toggle>
-    </layout-section>
-
-
     <script src="extension-menu.js" type="module"></script>
   </body>
 </html>

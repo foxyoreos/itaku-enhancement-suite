@@ -1,19 +1,54 @@
 section {
     font-family: sans-serif;
     background-color: rgb(80, 80, 80);
+    position: relative;
     padding: 0 0.5em;
     border-radius: 10px;
     margin-right: 1em;
     margin-bottom: 1em;
     padding-bottom: 0.25em;
     min-width: 40em;
+    max-width: 40em;
+    width: 40em;
 }
 
 h2 {
     font-size: 1.2em;
+    margin-bottom: 0;
 }
 
 #description {
-
+    font-style: italic;
     margin-bottom: 1em;
+    margin-top: 0.25em;
+}
+
+#collapse {
+    position: absolute;
+    opacity: 0;
+    height: 0;
+    width: 0;
+}
+
+#title {
+    cursor: pointer;
+}
+
+#title:before {
+    content: '▾';
+    font-size: 1rem;
+    padding-right: 1em;
+    display: inline-block;
+}
+
+#collapse:checked ~ label #title:before {
+    content: '▸';
+}
+
+#collapse:focus-visible ~ label #title:before {
+    border: solid 1px white;
+}
+
+.body {
+    overflow: hidden;
 }

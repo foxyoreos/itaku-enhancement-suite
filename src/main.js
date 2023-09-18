@@ -9,8 +9,14 @@
 const settings = {
   positive_regexes: [],
   negative_regexes: [],
-  hide_follower_counts: true,
-  expanded_notifications: true,
+
+  /* Bloclist behaviors */
+  bubble_blocklists: true,
+  always_hide_blocklists: true,
+
+  /* Anti-gamification settings */
+  hide_follower_counts: false,
+  use_enhanced_previews: true,
 
   /* Toggleable fixes */
   fix_unescaped_queries: true,
@@ -40,6 +46,7 @@ const CONTENT_FEEDS = {
     'https://itaku.ee/api/galleries/images/?*', /* Home "images" tab and profile galleries */
     'https://itaku.ee/api/user_profiles/*/latest_content/', /* Recently starred/uploaded */
     'https://itaku.ee/api/galleries/images/user_starred_imgs/?*', /* starred images on profiles */
+    'https://itaku.ee/api/submission_inbox/?*', /* Self explanatory... submission inbox. */
 
     /* These links are used more for direct fetch caching, rather than content warnings */
     'https://itaku.ee/api/*/comments/?*', /* Comment fetch */
@@ -250,6 +257,13 @@ function checkContentObjectWarnings (result) {
   if (show && !rehide) { result.show_content_warning = false; }
 }
 
+function checkBlocklisted(result) {
+  /* Exclude your own pictures */
+  if (user?.id === result.owner) { return false; }
+
+  return result?.blacklisted?.is_blacklisted; /* Otherwise... pretty basic. */
+}
+
 /* Cache updates. We only cache content that belongs to the user since that's
  * the only content that will be referenced in the notifications drawer. */
 function cacheContentObject(result) {
@@ -284,16 +298,94 @@ function cacheContentObject(result) {
  * necessary to repeatedly recurse into objects to get at everything that can
  * have a content warning attached. */
 function recurseContentObject (result) {
+  if (!result) { return; }
   checkContentObjectWarnings(result);
   cacheContentObject(result);
 
-  if (result.gallery_images) {
-    result.gallery_images.forEach(
-      (image) => {
-        checkContentObjectWarnings(image);
-        cacheContentObject(image);
-      });
-  }
+  const fields = [
+    'results',
+    'latest_gallery_images',
+    'recently_liked_images',
+    'embedded_images',
+
+    /* For profiles */
+    'pinned_item',
+
+    /* Normal recursion */
+    'gallery_images',
+
+    /* Handle reposts, which are treated as their own objects */
+    'content_object',
+  ];
+
+  fields.forEach((field) => {
+    if (!result[field]) { return; }
+
+    /* See "pinned_item"/"content_object". We do want to be able to remove these
+     * if necessary. */
+    if (result[field].constructor !== Array) {
+      recurseContentObject(result[field]);
+      if (checkBlocklisted(result[field])) {
+
+        /* Bubble results */
+        if (settings.bubble_blocklists) {
+          result.blacklisted = result.blacklisted || {
+            is_blacklisted: true,
+            tags: []
+          };
+          result.blacklisted.tags =
+            result.blacklisted.tags.concat(['contains_blocklisted']);
+        }
+
+        /* Always hide blocklisted results */
+        if (always_hide_blocklists) {
+          result[field] = null;
+          return;
+        }
+      }
+      return;
+    }
+
+    /* If you're directly navigating to an object, we can't just return nothing.
+     * But for any other kinds of looping, we're going to filter out content objects. */
+    result[field] = result[field].reduce((children, obj) => {
+      recurseContentObject(obj); /* Set fields (as necessary) */
+      if (checkBlocklisted(obj)) {
+
+        /* Bubble results */
+        if (settings.bubble_blocklists) {
+          result.blacklisted = result.blacklisted || {
+            is_blacklisted: true,
+            tags: []
+          };
+          result.blacklisted.tags =
+            result.blacklisted.tags.concat(['contains_blocklisted']);
+          return children;
+        }
+      }
+
+      children.push(obj);
+      return children;
+    }, []);
+  });
+
+  // if (result.gallery_images) {
+  //   result.gallery_images = result.gallery_images.reduce((result, image) => {
+  //     checkContentObjectWarnings(image);
+  //     cacheContentObject(image);
+
+  //     /* Filter out child objects that shouldn't be here. */
+  //     if (!checkBlocklisted(image)) {
+  //       result.push(image);
+  //     }
+
+  //     return result;
+  //   }, []);
+  //
+  //
+  /* Reconcile new image count with blocked images (?) */
+  // }
+
 
   /* Handle comment requests (note that we don't need to check these for content
    * warnings though, only to cache) */
@@ -302,11 +394,6 @@ function recurseContentObject (result) {
       (child) => {
         cacheContentObject(child);
       });
-  }
-
-  /* Handle reposts, which are treated as their own objects */
-  if (result.content_object) {
-    recurseContentObject(result.content_object);
   }
 }
 
@@ -328,25 +415,28 @@ function handleContentObject (details) {
   };
 
   filter.onstop = (e) => {
-    const json = JSON.parse(str);
+    let json = JSON.parse(str);
 
     /* Most feeds are structured around "results", but we also check recently
      * starred/uploaded lists, which use different keys. For right now, we ignore
      * "latest_active_commissions" because it's not clear content warnings will be
      * applicable to them. */
-    const results = json.results || [];
-    const latest_gallery_images = json.latest_gallery_images || [];
-    const recently_liked_images = json.recently_liked_images || [];
-    const embedded_images = json.gallery_images || [];
-    const pinned_item = json.pinned_item || null;
+    // let results = json.results || [];
+    // let latest_gallery_images = json.latest_gallery_images || [];
+    // let recently_liked_images = json.recently_liked_images || [];
+    // let embedded_images = json.gallery_images || [];
+    // let pinned_item = json.pinned_item || null;
 
     /* TODO there could be better checks here to see which are applicable. */
-    recurseContentObject(json); /* Check itself (for direct posts) */
-    if (pinned_item) { recurseContentObject(pinned_item); }
-    results.forEach((obj) => recurseContentObject(obj));
-    latest_gallery_images.forEach((obj) => recurseContentObject(obj));
-    recently_liked_images.forEach((obj) => recurseContentObject(obj));
-    embedded_images.forEach((obj) => recurseContentObject(obj));
+    recurseContentObject(json.page || json); /* Check itself (for direct posts) */
+    // if (pinned_item) { recurseContentObject(pinned_item); }
+
+    console.log(json);
+
+    // results.forEach((obj) => recurseContentObject(obj));
+    // latest_gallery_images.forEach((obj) => recurseContentObject(obj));
+    // recently_liked_images.forEach((obj) => recurseContentObject(obj));
+    // embedded_images.forEach((obj) => recurseContentObject(obj));
 
     filter.write(encoder.encode(JSON.stringify(json)));
 

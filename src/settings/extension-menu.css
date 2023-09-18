@@ -1,7 +1,20 @@
 html {
     background-color: rgb(30,30,30);
     color: rgb(220,220,220);
-    padding: 0 0.5em;
+}
+
+body {
+    height: 35em;
+    padding-left: 0.5em;
+    padding-right: 0.2em;
+}
+
+main {
+    padding-right: 0.3em;
+    overflow: scroll;
+    width: 100%;
+    max-height: 35em;
+    height: 35em;
 }
 
 a {
