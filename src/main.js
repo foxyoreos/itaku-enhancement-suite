@@ -20,6 +20,9 @@ const settings = {
 
   /* Toggleable fixes */
   fix_unescaped_queries: true,
+
+  /* Itaku internal settings */
+  __INLINE__mute_submission_notifs: false,
 };
 
 const user = { /* Stored in extension sessionStorage (this is pretty fragile, but probably fine) */
@@ -215,6 +218,14 @@ browser.webRequest.onBeforeRequest.addListener((details) => {
       if (!json.profile || !json.profile.owner) { return null; }
       user.username = json.profile.owner_username;
       user.id = json.profile.owner;
+    })();
+
+    /* Set submission mute based on the user preferences for the entire site,
+     * rather than separating them into a separate setting. */
+    (() => {
+      if (!json.meta) { return null; }
+      settings.__INLINE__mute_submission_notifs = json.meta.mute_submission_notifs;
+      save();
     })();
 
     sessionStorage.setItem('ItakuEnhancedUserMeta', JSON.stringify(user));

@@ -1,0 +1,4 @@
+.ItakuEnhanced--muteSubmissions app-header mat-icon[data-cy="app-header-unread-inbox-badge"] .mat-badge-content,
+.ItakuEnhanced--muteSubmissions .cdk-overlay-container .mat-menu-panel .mat-menu-item[routerlink="/submission-inbox"] .mat-badge .mat-badge-content {
+    display: none;
+}
