@@ -4,8 +4,9 @@
   }
 
   async function getSettings() {
-    const settings = await browser.storage.sync.get('__INLINE__mute_submission_notifs');
-    setClass(settings.__INLINE__mute_submission_notifs);
+    const settings = await browser.storage.sync.get();
+    setClass(settings.__INLINE__mute_submission_notifs &&
+             settings.fix_submission_notifs);
   }
 
   browser.storage.onChanged.addListener(() => {

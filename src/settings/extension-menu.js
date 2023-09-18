@@ -10,20 +10,23 @@ import InputNewlineList from "./components/InputNewlineList.js";
   settings.positive_regexes = settings.positive_regexes || [];
   settings.negative_regexes = settings.negative_regexes || [];
 
-
   /* Add listeners to settings */
   const settingElements = document.querySelectorAll('layout-section > *');
-  settingElements.forEach((setting) => {
+  const bindings = Array.prototype.map.call(settingElements, (setting) => {
     const attribute = setting.getAttribute('setting');
     const set = setting.bind((value) => {
-      settings[attribute] = value;
+      if (settings[attribute] === value) { return; }
 
-      /* We can actually just set this directly now :3 */
+      settings[attribute] = value;
       browser.storage.sync.set(settings);
     });
 
-    console.log(attribute, settings[attribute])
-    set(settings[attribute]);
+    return () => { set(settings[attribute]); }
+  });
+
+  bindings.forEach((binding) => binding());
+  browser.storage.onChanged.addListener(() => {
+    bindings.forEach((binding) => binding());
   });
 
 }());

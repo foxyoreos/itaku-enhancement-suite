@@ -20,6 +20,7 @@ const settings = {
 
   /* Toggleable fixes */
   fix_unescaped_queries: true,
+  fix_submission_notifs: true,
 
   /* Itaku internal settings */
   __INLINE__mute_submission_notifs: false,
@@ -78,7 +79,6 @@ async function save () {
 async function load () {
   const storageSettings = await browser.storage.sync.get();
   Object.assign(settings, storageSettings);
-  save(); /* After loading new default settings, save them. */
 
   settings.positive_regexes = settings.positive_regexes || [];
   settings.negative_regexes = settings.negative_regexes || [];
@@ -113,6 +113,7 @@ browser.webRequest.onBeforeRequest.addListener((details) => {
 async function init () {
   try {
     await load();
+    save(); /* After loading new default settings, save them. */
 
     /* Receive communication from the front-end (mostly used for setting/fetching settings) */
     onMessageHandler = (evt, sender, response) => {
