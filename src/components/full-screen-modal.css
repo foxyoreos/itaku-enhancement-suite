@@ -8,6 +8,10 @@
   width: 100%;
 }
 
+.ItakuEnhanced--fullScreenPreviews app-image-dialog mat-dialog-content {
+  max-height: 100vh !important;
+}
+
 .ItakuEnhanced--fullScreenPreviews app-image-detail,
 .ItakuEnhanced--fullScreenPreviews app-image-detail .container {
   max-width: 100%;
@@ -21,7 +25,7 @@
 
 .ItakuEnhanced--fullScreenPreviews app-image-detail mat-card .img-wrapper,
 .ItakuEnhanced--fullScreenPreviews app-image-detail mat-card .img-wrapper .mat-card-image {
-  height: 100%;
+  max-height: 100%;
 }
 
 .ItakuEnhanced--fullScreenPreviews app-image-detail mat-card .img-wrapper .mat-card-image {
