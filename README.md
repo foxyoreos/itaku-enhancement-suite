@@ -16,6 +16,7 @@ See the full list of currently supported features in the [wiki](https://codeberg
 - Requests as few permissions as possible and is only active on the Itaku domain.
 - Never makes network requests to any other domain.
 - When possible, prefers `sessionStorage` for cached data which allows caches to be automatically cleared whenever the browser closes.
+- Deploys/pushes use 2FA for both Codeberg and Mozilla Addons store.
 
 ## Performance and Optimization
 

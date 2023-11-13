@@ -1,32 +1,29 @@
 import LayoutSection from "./components/LayoutSection.js";
 import InputToggle from "./components/InputToggle.js";
 import InputNewlineList from "./components/InputNewlineList.js";
+import settings from "./settings.js";
 
 
 (async function () {
-
-  /* Load */
-  const settings = await browser.storage.sync.get();
-  settings.positive_regexes = settings.positive_regexes || [];
-  settings.negative_regexes = settings.negative_regexes || [];
 
   /* Add listeners to settings */
   const settingElements = document.querySelectorAll('layout-section > *');
   const bindings = Array.prototype.map.call(settingElements, (setting) => {
     const attribute = setting.getAttribute('setting');
+    const disabledAttribute = setting.getAttribute('disable');
     const set = setting.bind((value) => {
       if (settings[attribute] === value) { return; }
-
       settings[attribute] = value;
-      browser.storage.sync.set(settings);
     });
 
-    return () => { set(settings[attribute]); }
+    return () => {
+      const disabled = disabledAttribute ? settings[disabledAttribute] : false;
+      set(settings[attribute], disabled);
+    }
   });
 
-  bindings.forEach((binding) => binding());
-  browser.storage.onChanged.addListener(() => {
+  bindings.forEach((binding) => binding(settings));
+  browser.storage.onChanged.addListener(async () => {
     bindings.forEach((binding) => binding());
   });
-
 }());

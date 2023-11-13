@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Itaku Enhancement Suite",
-  "version": "0.6.0",
+  "version": "0.7.0",
 
   "description": "A collection of minor site enhancements for Itaku, the furry website",
   "icons": {
@@ -20,7 +20,8 @@
   ],
 
   "background": {
-    "scripts": ["src/main.js"]
+    "scripts": ["src/main.js"],
+    "type": "module"
   },
 
   "content_scripts": [{
@@ -29,7 +30,6 @@
       "src/components/notifications.js",
       "src/components/user_menu.js",
       "src/components/follower-count.js",
-      "src/components/full_screen_modal.js",
       "src/components/submission_notifications.js"
     ],
     "css": [
@@ -37,7 +37,6 @@
       "src/components/notifications.css",
       "src/components/extension-indicator.css",
       "src/components/follower-count.css",
-      "src/components/full-screen-modal.css",
       "src/components/submission-notifications.css"
     ],
     "run_at": "document_idle"

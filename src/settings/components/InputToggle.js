@@ -9,8 +9,9 @@ const methods = {
     });
 
     /* Setter to wire into your own event system. */
-    return function (value) {
+    return function (value, disabled) {
       input.checked = value;
+      input.disabled = disabled;
     }.bind(this);
   }
 };

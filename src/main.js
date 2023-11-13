@@ -1,3 +1,10 @@
+import fixUnescapedAnds from "./listeners/tagSearchFix.js";
+import includeBlocklistPreFilter from "./listeners/includeBlocklistPreFilter.js";
+import blocklist from "./listeners/blocklist.js";
+import reshares from "./listeners/reshares.js";
+import feedFilter from "./listeners/feedFilter.js";
+import comments from "./listeners/comments.js";
+
 /* ------------------------------------------------------ */
 /* --------------- CACHES/SETTINGS/CONSTANTS ------------ */
 /* ------------------------------------------------------ */
@@ -6,25 +13,7 @@
  * and re-loaded; the data here is temporary and will often need to be
  * re-fetched from extension settings/front-end. */
 
-const settings = {
-  positive_regexes: [],
-  negative_regexes: [],
-
-  /* Bloclist behaviors */
-  bubble_blocklists: true,
-  always_hide_blocklists: true,
-
-  /* Anti-gamification settings */
-  hide_follower_counts: false,
-  use_enhanced_previews: true,
-
-  /* Toggleable fixes */
-  fix_unescaped_queries: true,
-  fix_submission_notifs: true,
-
-  /* Itaku internal settings */
-  __INLINE__mute_submission_notifs: false,
-};
+const settings = {}; /* See `settings/settings.js` */
 
 const user = { /* Stored in extension sessionStorage (this is pretty fragile, but probably fine) */
   id: null,
@@ -70,6 +59,12 @@ const USER_CALLS = {
   types: ['xmlhttprequest']
 };
 
+/* Reactive properties */
+browser.storage.onChanged.addListener(async () => {
+  const storageSettings = await browser.storage.sync.get();
+  Object.assign(settings, storageSettings);
+});
+
 /* Persist settings and cache (TODO we should watch out for race conditions with "load" here) */
 async function save () {
   browser.storage.sync.set(settings);
@@ -82,6 +77,7 @@ async function load () {
 
   settings.positive_regexes = settings.positive_regexes || [];
   settings.negative_regexes = settings.negative_regexes || [];
+  settings.tag_warnings = settings.tag_warnings || [];
   const userObj = JSON.parse(sessionStorage.getItem('ItakuEnhancedUserMeta')) || {};
   user.id = userObj.id;
   user.username = userObj.username;
@@ -118,17 +114,6 @@ async function init () {
     /* Receive communication from the front-end (mostly used for setting/fetching settings) */
     onMessageHandler = (evt, sender, response) => {
       switch (evt.type) {
-      case 'set_positive_regexes':
-        settings.positive_regexes = evt.content;
-        save();
-        break;
-      case 'set_negative_regexes':
-        settings.negative_regexes = evt.content;
-        save();
-        break;
-      case 'get_settings':
-        response({ type: 'response', content: settings });
-        break;
       case 'get_user':
         response({ type: 'response', content: user });
         break;
@@ -215,11 +200,15 @@ browser.webRequest.onBeforeRequest.addListener((details) => {
 
   filter.onstop = (e) => {
     const json = JSON.parse(str);
-    (() => { /* TODO isn't there like a ?. operator now or something? */
-      if (!json.profile || !json.profile.owner) { return null; }
-      user.username = json.profile.owner_username;
-      user.id = json.profile.owner;
-    })();
+    user.username = json?.profile?.owner_username;
+    user.id = json?.profile?.owner;
+
+    /* Used for filtering blacklisted users in strict mode. Convert to an
+     * object hash so that it's easier to reference performantly. */
+    user.blacklisted_users = (json?.meta?.blacklisted_users || []).reduce((result, id) => {
+      result[id] = true;
+      return result;
+    }, {});
 
     /* Set submission mute based on the user preferences for the entire site,
      * rather than separating them into a separate setting. */
@@ -240,41 +229,6 @@ browser.webRequest.onBeforeRequest.addListener((details) => {
 /* ------------------ EXTENSION LOGIC ------------------- */
 /* ------------------------------------------------------ */
 /* The actual code that's doing stuff. */
-
-/* Filter code for content warnings. No matches should leave the warning
- * untouched. A positive match should hide the content warning. A negative match
- * should re-show the content warning, overriding the positive match. */
-function checkContentObjectWarnings (result) {
- if (!result.show_content_warning) { return; }
-      const show = settings.positive_regexes.reduce((show, regex) => {
-        if (regex == '') { return show; }
-
-        try { /* Catch invalid regex */
-          return show || !!result.content_warning.match(regex);
-        } catch (err) {
-          return show;
-        }
-      }, false);
-
-      const rehide = settings.negative_regexes.reduce((hide, regex) => {
-        if (regex == '') { return hide; }
-
-        try {
-          return hide || !!result.content_warning.match(regex);
-        } catch (err) {
-          return hide;
-        }
-      }, false);
-
-  if (show && !rehide) { result.show_content_warning = false; }
-}
-
-function checkBlocklisted(result) {
-  /* Exclude your own pictures */
-  if (user?.id === result.owner) { return false; }
-
-  return result?.blacklisted?.is_blacklisted; /* Otherwise... pretty basic. */
-}
 
 /* Cache updates. We only cache content that belongs to the user since that's
  * the only content that will be referenced in the notifications drawer. */
@@ -309,12 +263,9 @@ function cacheContentObject(result) {
 /* Different object types on Itaku are embedded within each other. It's often
  * necessary to repeatedly recurse into objects to get at everything that can
  * have a content warning attached. */
-function recurseContentObject (result) {
-  if (!result) { return; }
-  checkContentObjectWarnings(result);
-  cacheContentObject(result);
-
-  const fields = [
+function recurseContentObject (obj) {
+  if (!obj) { return; }
+  const child_fields = [
     'results',
     'latest_gallery_images',
     'recently_liked_images',
@@ -330,84 +281,94 @@ function recurseContentObject (result) {
     'content_object',
   ];
 
-  fields.forEach((field) => {
-    if (!result[field]) { return; }
 
-    /* See "pinned_item"/"content_object". We do want to be able to remove these
-     * if necessary. */
-    if (result[field].constructor !== Array) {
-      recurseContentObject(result[field]);
-      if (checkBlocklisted(result[field])) {
+  cacheContentObject(obj);
 
-        /* Bubble results */
-        if (settings.bubble_blocklists) {
-          result.blacklisted = result.blacklisted || {
-            is_blacklisted: true,
-            tags: []
-          };
-          result.blacklisted.tags =
-            result.blacklisted.tags.concat(['contains_blocklisted']);
-        }
+  /* For simplicity's sake, we treat child objects that are not arrays as if they were
+   * arrays. This greatly reduces complexity for filters that want to iterate over children.
+   * Do handle this, we convert each object to an array and then convert back before
+   * returning the final object. There is a caveat: if you write multiple objects to an
+   * array for `pinned_item`, we're only going to take the first object when converting back. */
+  let temp_arrays = []; /* Explained more below. */
 
-        /* Always hide blocklisted results */
-        if (always_hide_blocklists) {
-          result[field] = null;
-          return;
-        }
-      }
-      return;
+  /* Start by recursing down to the children and running filters on them. */
+  child_fields.forEach((field) => {
+    if (!obj[field]) { return; }
+
+    /* Array conversion (see above) */
+    if (obj[field].constructor !== Array) {
+      temp_arrays.push(field);
+      obj[field] = [obj[field]];
     }
 
-    /* If you're directly navigating to an object, we can't just return nothing.
-     * But for any other kinds of looping, we're going to filter out content objects. */
-    result[field] = result[field].reduce((children, obj) => {
-      recurseContentObject(obj); /* Set fields (as necessary) */
-      if (checkBlocklisted(obj)) {
+    const children = obj[field];
+    let result = children.reduce((result, child) => {
+      child = recurseContentObject(child);
 
-        /* Bubble results */
-        if (settings.bubble_blocklists) {
-          result.blacklisted = result.blacklisted || {
-            is_blacklisted: true,
-            tags: []
-          };
-          result.blacklisted.tags =
-            result.blacklisted.tags.concat(['contains_blocklisted']);
-          return children;
-        }
+      /* Return null from a filter script to remove the child/object from its parent. */
+      if (child != null) {
+        result.push(child);
       }
-
-      children.push(obj);
-      return children;
+      return result;
     }, []);
+
+    obj[field] = result || undefined;
   });
 
-  // if (result.gallery_images) {
-  //   result.gallery_images = result.gallery_images.reduce((result, image) => {
-  //     checkContentObjectWarnings(image);
-  //     cacheContentObject(image);
+  /* Okay, we've finished recursing, now we need to handle ourselves. */
+  const response = contentFilters.reduce((result, filter) => {
+    if (result) { /* If a filter returns null, no need to call the remaining filters. */
+      result = filter(obj, settings, child_fields, user);
+    }
 
-  //     /* Filter out child objects that shouldn't be here. */
-  //     if (!checkBlocklisted(image)) {
-  //       result.push(image);
-  //     }
+    return result;
+  }, obj);
 
-  //     return result;
-  //   }, []);
-  //
-  //
-  /* Reconcile new image count with blocked images (?) */
-  // }
+  /* Rewrite the response to get rid of the fake arrays (see notes on temp_arrays) */
+  temp_arrays.forEach((field) => {
+    if (response[field]) {
+      response[field] = response[field].length ? response[field][0] : undefined;
+    }
+  });
 
+  /* TODO: It's possible for the above operation to leave the parent in a broken state. */
+  /* Should we filter out parents that have no valid children attached to them? */
+  /* For now, no becase we'll just make this into a dependent setting. */
 
   /* Handle comment requests (note that we don't need to check these for content
    * warnings though, only to cache) */
-  if (result.children) {
-    result.children.forEach(
+  if (response.children) {
+    response.children.forEach(
       (child) => {
         cacheContentObject(child);
       });
   }
+
+  /* And return. */
+  return response;
 }
+
+/* Called before the request has finished, useful for fixing query params
+ * or redirecting requests, or serving cached content. */
+const preFilters = [
+  fixUnescapedAnds,
+  includeBlocklistPreFilter,
+  comments,
+];
+
+/* Called on the global response JSON object, useful for doing arbitrary
+ * manipulations. */
+const responseFilters = [
+  feedFilter,
+  reshares,
+];
+
+/* Most commonly called filters, called recursively for each content object
+ * in the response starting from the bottom. Allows bubbling information from
+ * nested content objects to their parents. */
+const contentFilters = [
+  blocklist,
+];
 
 /* Entry point for most "backend" logic:
  * - check content warnings and modify requests to deal with them.
@@ -416,7 +377,19 @@ function recurseContentObject (result) {
  *
  * This is all mostly handled by calling into other functions (see above) */
 function handleContentObject (details) {
-  let blockingResponse = fixUnescapedAnds(details);
+  if (details.method !== 'GET') {
+    return details;
+  }
+
+  /* Redirects and URL fixes that can happen before we ever start
+   * parsing URLs. */
+  let blockingResponse = preFilters.reduce((result, filter) => {
+    return filter(details, result, settings);
+  }, {});
+
+
+  /* Set up event listeners for content filtering */
+  /* TODO Check if we need a return above, we don't want to call this logic twice. */
   let filter = browser.webRequest.filterResponseData(details.requestId);
   let decoder = new TextDecoder('utf-8');
   let encoder = new TextEncoder();
@@ -429,56 +402,14 @@ function handleContentObject (details) {
   filter.onstop = (e) => {
     let json = JSON.parse(str);
 
-    /* Most feeds are structured around "results", but we also check recently
-     * starred/uploaded lists, which use different keys. For right now, we ignore
-     * "latest_active_commissions" because it's not clear content warnings will be
-     * applicable to them. */
-    // let results = json.results || [];
-    // let latest_gallery_images = json.latest_gallery_images || [];
-    // let recently_liked_images = json.recently_liked_images || [];
-    // let embedded_images = json.gallery_images || [];
-    // let pinned_item = json.pinned_item || null;
+    const response = responseFilters.reduce((result, filter) => {
+      return filter(details, result, settings, user);
+    }, json);
 
     /* TODO there could be better checks here to see which are applicable. */
-    recurseContentObject(json.page || json); /* Check itself (for direct posts) */
-    // if (pinned_item) { recurseContentObject(pinned_item); }
-
-    console.log(json);
-
-    // results.forEach((obj) => recurseContentObject(obj));
-    // latest_gallery_images.forEach((obj) => recurseContentObject(obj));
-    // recently_liked_images.forEach((obj) => recurseContentObject(obj));
-    // embedded_images.forEach((obj) => recurseContentObject(obj));
-
-    filter.write(encoder.encode(JSON.stringify(json)));
-
+    recurseContentObject(response.page || response); /* Check itself (for direct posts) */
+    filter.write(encoder.encode(JSON.stringify(response)));
     filter.close();
-  }
-
-  return blockingResponse;
-}
-
-function fixUnescapedAnds (details, blockingResponse = {}) {
-  if (!settings.fix_unescaped_queries) { return blockingResponse; }
-
-  const url = blockingResponse.redirectURL || details.url;
-  if (url.slice(0, 21) !== 'https://itaku.ee/api/') {
-    return blockingResponse;
-  }
-
-  let needsRedirect = false;
-  const split = url.split('&');
-  const redirect = split[0] + split.slice(1).map(str => {
-    if (!str) { return ''; }
-    if (str.indexOf('=') === -1) {
-      needsRedirect = true;
-      return encodeURIComponent(`&${str}`);
-    }
-    return `&${str}`;
-  }).join('');
-
-  if (needsRedirect) {
-    blockingResponse.redirectUrl = redirect;
   }
 
   return blockingResponse;

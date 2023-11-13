@@ -23,6 +23,17 @@
       </section>
     </template>
 
+    <template id="layout-tabs">
+    </template>
+
+    <template id="layout-tab">
+      <link rel="stylesheet" href="components/LayoutTab.css">
+      <!-- radio list of which tab to display -->
+      <!-- on select, aria-hide other tabs (w/animation?) -->
+      <!-- div role="tab" data-name=""" -->
+      <!-- On init/add, attach the correct tabs using another nested template... -->
+    </template>
+
     <!-- Input controls -->
     <template id="input-toggle">
       <link rel="stylesheet" href="components/InputToggle.css">
@@ -44,8 +55,14 @@
       <h1>Itaku Enhancement Suite</h1>
       <a href="https://codeberg.org/foxyoreos/itaku-enhancement-suite/wiki">Help/Wiki Link</a>
 
+      <layout-tabs>
+        <layout-tab title="test">
+      </layout-tabs>
+
+
+
       <layout-section title="Content Warning Regex Filters"
-                      description="Define positive and negative filters for content warnings. Content warnings will be shown by default unless they match a positive filter, in which case they will be hidden. Hidden content warnings are also checked against negative filters, in which case they will be re-shown. Broken/malformed regex filters and blank lines will be ignored.">
+                      description="Define positive and negative filters for content warnings. Content warnings will be shown by default unless they match a positive filter, in which case they will be hidden. Hidden content warnings are also checked against negative filters, in which case they will be re-shown. Broken/malformed regex filters and blank lines will be ignored. These will soon be fully replaced with a tag-based system.">
         <input-newline-list slot="control"
                             label="Positive Filters"
                             hint="Ignore content warnings if any of these regex match (one per line)"
@@ -56,24 +73,39 @@
                             setting="negative_regexes"></input-newline-list>
       </layout-section>
 
-      <layout-section title="Blocklists"
-                      description="Itaku's built-in blocklist alternates between hiding content completely and just putting warnings in front of it. This section supplies options to make the blocklist behavior stricter and more consistent.">
+      <layout-section title="Blocklist/Warning Fixes"
+                      description="Itaku's built-in blocklist alternates between hiding content completely and just putting warnings in front of it. This section supplies options to make both the blocklist and content warning feature stricter and more consistent.">
         <input-toggle slot="control"
                       label="Always hide blocklisted content (never just show a warning)"
                       setting="always_hide_blocklists"></input-toggle>
         <input-toggle slot="control"
-                      label="Bubble blocklists (ex Block posts that contain blocklisted images)"
-                      setting="bubble_blocklists"></input-toggle>
+                      label="Bubble blocklists (block posts if any of the images in them are blocked)"
+                      setting="bubble_blocklists"
+                      disable="always_hide_blocklists"></input-toggle>
+        <input-toggle slot="control"
+                      label="Bubble warnings (show a warning on posts that contain images with warnings)"
+                      setting="bubble_warnings"></input-toggle>
       </layout-section>
+
+      <layout-section title="Feed Filtering"
+                      description="Options to aid in filtering your home feed. Does not affect other feeds or your inbox">
+
+        <input-toggle slot="control"
+                      label="Hide your own posts/images/reshares from your home feed."
+                      setting="hide_own_shares"></input-toggle>
+
+        <input-toggle slot="control"
+                      label="Hide reshares of images and posts that you've already starred."
+                      setting="hide_liked_reshared"></input-toggle>
+        </layout-section>
 
       <layout-section title="Miscellaneous Features">
         <input-toggle slot="control"
-                      label="Use Enhanced Image Viewer (BETA)"
-                      setting="use_enhanced_previews"></input-toggle>
-
-        <input-toggle slot="control"
                       label="Hide All Follower Counts"
                       setting="hide_follower_counts"></input-toggle>
+        <input-toggle slot="control"
+                      label="Sort comments in descending order"
+                      setting="sort_comments_descending"></input-toggle>
       </layout-section>
 
       <layout-section title="Experimental Fixes"
