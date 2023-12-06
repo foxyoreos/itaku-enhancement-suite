@@ -34,7 +34,7 @@ See the full list of currently supported features in the [wiki](https://codeberg
 I do not willingly collect any user information, annonymized or not. No information is transmitted from the Itaku Enhancement Suite to any server I control. The extension currently collects the following information and stores it locally within your browser (it is never transmitted off-device):
 
 - Your extension settings (stored locally in extension storage)
-- The currently logged in username (temporary cache, stored in sessionStorage and automatically cleared by Firefox after every browsing session)
+- The currently logged in user metadata (username, blocked tags/users, etc... this is a temporary cache, stored in sessionStorage and automatically cleared by Firefox after every browsing session)
 - User-created post/image/comment descriptions/titles (temporary cache, stored in sessionStorage and automatically cleared by Firefox after every browsing session)
 
 This list is subject to change as more features are added.
