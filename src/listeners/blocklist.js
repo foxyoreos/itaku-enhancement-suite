@@ -1,6 +1,4 @@
-import settings from "../settings/settings.js";
 import { resolver, build_expression_tree } from '../utils/expressionCompiler.js';
-
 
 const blocks = [
   {
@@ -92,7 +90,7 @@ function checkBlockedOrWarning(obj, settings, user) {
   }
 }
 
-function checkBlocklisted(obj, user) {
+function checkBlocklisted(obj, settings, user) {
 
   /* Exclude your own pictures. */
   if (user?.id === obj.owner) { return []; }
@@ -185,7 +183,7 @@ export default function blocklist(obj, settings, child_fields, user) {
 
     children.forEach((child) => {
       if (!settings.bubble_blocklists) { return; }
-      const tags = checkBlocklisted(child, user);
+      const tags = checkBlocklisted(child, settings, user);
       tags.forEach(blockedTagsSet.add, blockedTagsSet);
     });
 
@@ -201,14 +199,14 @@ export default function blocklist(obj, settings, child_fields, user) {
     if (settings.always_hide_blocklists) {
       obj[field] = children.filter((child) => {
         /* NOTE: this method must not have side effects, because we're calling it multiple times. */
-        return checkBlocklisted(child, user).length === 0 && !checkBlockedUser(child, user);
+        return checkBlocklisted(child, settings, user).length === 0 && !checkBlockedUser(child, user);
       });
     }
   });
 
   /* Add ourselves to the block/warning sets */
   (() => {
-    let tags = checkBlocklisted(obj, user);
+    let tags = checkBlocklisted(obj, settings, user);
     let warning = getWarning(obj, settings, user);
     tags.forEach(blockedTagsSet.add, blockedTagsSet);
     if (warning) { contentWarningSet.add(warning); }
