@@ -101,7 +101,7 @@ function checkBlocklisted(obj, user) {
   let blocklistedTags = obj?.blacklisted?.is_blacklisted ? obj.blacklisted.tags : [];
 
   /* Convert content warning to tags and check against them. */
-  if (settings.convert_warnings_to_tags && obj.content_warning) {
+  if (settings.convert_warnings_to_tags && obj.content_warning && user?.blacklisted_tags) {
     let tags = obj.content_warning.match(/([^, ]+)/gm).map((tag) => tag.toLowerCase());
 
     tags.forEach((tag) => {
