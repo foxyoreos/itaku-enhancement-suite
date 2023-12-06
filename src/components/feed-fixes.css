@@ -1,0 +1,44 @@
+/* Submission inbox (TODO this should be covered by the rule below...)*/
+.ItakuEnhanced--stickyHeaders app-submission-inbox > .compact-container > div {
+    position: sticky;
+    top: 4em;
+    z-index: 100;
+    background: var(--page-background);
+}
+
+/* Normal feeds and user profile */
+.ItakuEnhanced--stickyHeaders nav.mat-tab-nav-bar {
+    background: var(--page-background);
+    position: sticky;
+    top: 4em;
+    z-index: 101;
+}
+
+.ItakuEnhanced--stickyHeaders app-filter {
+    background: var(--page-background);
+    position: sticky;
+    top: calc(7em + 1px);
+    margin-top: -8px;
+    padding-top: 8px;
+    z-index: 100;
+}
+
+/* Fix for a gallery-specific bug that I'm not sure where to start tracking down.*/
+/* Probably a Firefox bug? But this fixes is at least. */
+.ItakuEnhanced--stickyHeaders app-home-images app-filter,
+.ItakuEnhanced--stickyHeaders app-home-comms app-filter {
+    position: relative;
+    top: unset;
+    margin-top: unset;
+    padding-top: unset;
+}
+
+.ItakuEnhanced--stickyHeaders app-home-images app-filter > .wrapper,
+.ItakuEnhanced--stickyHeaders app-home-comms app-filter > .wrapper{
+    background: var(--page-background);
+    position: sticky;
+    top: calc(7em + 1px);
+    margin-top: -8px;
+    padding-top: 8px;
+    z-index: 100;
+}

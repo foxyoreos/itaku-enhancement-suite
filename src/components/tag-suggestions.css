@@ -1,0 +1,3 @@
+.ItakuEnhanced--hideGeneralTagSuggestions app-tag-suggestions div[data-cy="app-tag-suggestions-btns"] div:nth-child(3) {
+    display: none;
+}

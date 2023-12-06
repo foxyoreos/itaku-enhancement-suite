@@ -100,6 +100,13 @@ browser.runtime.onMessage.addListener((evt, sender, response) => {
   if (onMessageHandler) { return onMessageHandler(evt, sender, response); }
 });
 
+async function get_script(url) {
+  const internal_path = browser.runtime.getURL(`src/clientside/${url}`);
+  const request = await fetch(internal_path);
+  const text = await request.text();
+  return text;
+}
+
 let contentRequestMiddleware = loadBlockingHandler;
 browser.webRequest.onBeforeRequest.addListener((details) => {
   if (contentRequestMiddleware) { return contentRequestMiddleware(details); }
@@ -117,6 +124,11 @@ async function init () {
       case 'get_user':
         response({ type: 'response', content: user });
         break;
+      case 'get_script':
+        get_script(evt.content.url).then((result) => {
+          response({ type: 'response', content: result });
+        });
+        return true;
       case 'sync':
 
         /* Note that this still doesn't guarantee that session data will be
@@ -209,6 +221,19 @@ browser.webRequest.onBeforeRequest.addListener((details) => {
       result[id] = true;
       return result;
     }, {});
+
+    /* Used for filtering blacklisted users in strict mode. Convert to an
+     * object hash so that it's easier to reference performantly. */
+    user.blacklisted_tags = (json?.meta?.blacklisted_tags || []).reduce((result, tag) => {
+      result[tag.name] = tag;
+      if (tag.synonymous_to) {
+        result[tag.synonymous_to.name] = tag.synonymous_to;
+      }
+
+      return result;
+    }, {});
+
+    console.log(user);
 
     /* Set submission mute based on the user preferences for the entire site,
      * rather than separating them into a separate setting. */

@@ -2,13 +2,26 @@
 const _settings = {
   positive_regexes: [],
   negative_regexes: [],
+  warning_positive_users: [],
+  warning_negative_users: [],
 
-  tag_warnings: [], /* temp for tags you want to attach content warnings to. */
+  /* Expressions for both blocking and warning. */
+  /* Written in the form of:
+   * {
+   *   expression: string,
+   *   compiled: [array_of_nested_checks]
+   *   label: string,
+   *   negative: boolean -> whether this undoes a block/warning,
+   *   behavior: block|warn
+   *   disabled: bolean
+   * } */
+  content_expressions: [],
 
   /* Blocklist and warning behaviors */
   bubble_warnings: false,
   bubble_blocklists: false,
   always_hide_blocklists: false,
+  convert_warnings_to_tags: true,
 
   /* Anti-gamification settings */
   hide_follower_counts: false,
@@ -22,10 +35,14 @@ const _settings = {
 
   /* Misc */
   sort_comments_descending: false,
+  sticky_headers: true,
+  tag_search_copy_paste: true,
+  tag_search_filter_duplicates: true,
 
   /* Toggleable site fixes */
   fix_unescaped_queries: true,
   fix_submission_notifs: true,
+  disable_all_clientside: false,
 
   /* Itaku internal settings */
   __INLINE__mute_submission_notifs: false,
@@ -44,7 +61,6 @@ const settings = new Proxy(_settings, {
       if (!changed) { return true; }
     }
 
-    console.log('Set called: ', prop, value);
     settings[prop] = value;
 
     /* Validation logic for dependent properties. */
@@ -73,7 +89,8 @@ browser.storage.onChanged.addListener((changes) => {
 });
 
 /* Initial load */
-(async () => {
+/* TODO: expose this as something pages can wait on. */
+export const ready = (async () => {
   const storageSettings = await browser.storage.sync.get();
   Object.assign(settings, storageSettings);
 

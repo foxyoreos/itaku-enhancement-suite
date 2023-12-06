@@ -1,10 +1,117 @@
+import settings from "../settings/settings.js";
+import { resolver, build_expression_tree } from '../utils/expressionCompiler.js';
+
+
+const blocks = [
+  {
+    name: 'example_block',
+    tree: build_expression_tree('@darelt | #lava'),
+    action: 'WARN'
+  }
+];
+
+/* Basic handler for actual blocking code. Needs to be wired into a bunch of other stuff. */
+function checkBlockedOrWarning(obj, settings, user) {
+  /* Exclude your own pictures. */
+  if (user?.id === obj.owner) { return { block: false, warn: false, hit: [] }; }
+
+  /* Actual blocklist code. */
+  /* TODO: read from settings */
+  const result = blocks.reduce((result, block) => {
+    let applicable = resolver(block.tree, (type, value) => {
+      switch(type) {
+      case 'TAG':
+        return obj?.blacklisted?.is_blacklisted ?
+          obj.blacklisted.tags.includes(value) :
+          false;
+
+      case 'RATING':
+      case 'ARTIST':
+        return obj?.owner_username === value;
+      default:
+        return false;
+      }
+    });
+
+    if (!applicable) { return result; }
+    switch(block.action) {
+    case 'BLOCK':
+      result.block = true;
+      result.hit.push(block.name);
+      return result;
+    case 'WARN':
+      result.warn = true;
+      result.hit.push(block.name);
+      return result;
+    default:
+      return result;
+    }
+
+    return result;
+  }, { block: false, warn: false, hit: [] });
+
+  /* Backup for existing logic. */
+  /* Pretty basic for now because we're not doing fully and only expressions yet. */
+  const blocked = obj?.blacklisted?.is_blacklisted ? obj.blacklisted.tags : [];
+  if (blocked.length) {
+    result.blocked = true;
+    result.hits = [...result.hits, ...blocked];
+  }
+
+  const warning = (() => {
+
+    /* skip if a warning is not present */
+    if (!obj.show_content_warning) { return null; }
+    const hide = settings.positive_regexes.reduce((show, regex) => {
+      if (regex == '') { return show; }
+
+      try { /* Catch invalid regex */
+        return show || !!obj.content_warning.match(regex);
+      } catch (err) {
+        return show;
+      }
+    }, false);
+
+    const reshow = settings.negative_regexes.reduce((hide, regex) => {
+      if (regex == '') { return hide; }
+
+      try {
+        return hide || !!obj.content_warning.match(regex);
+      } catch (err) {
+        return hide;
+      }
+    }, false);
+
+    const real_warning = !hide || reshow;
+    return real_warning ? obj.content_warning : null
+  })();
+
+  if (warning) {
+    result.warn = true;
+    result.hits.push(warning);
+  }
+}
+
 function checkBlocklisted(obj, user) {
 
   /* Exclude your own pictures. */
   if (user?.id === obj.owner) { return []; }
 
   /* Pretty basic for now because we're not doing expressions yet. */
-  return obj?.blacklisted?.is_blacklisted ? obj.blacklisted.tags : [];
+  let blocklistedTags = obj?.blacklisted?.is_blacklisted ? obj.blacklisted.tags : [];
+
+  /* Convert content warning to tags and check against them. */
+  if (settings.convert_warnings_to_tags && obj.content_warning) {
+    let tags = obj.content_warning.match(/([^, ]+)/gm).map((tag) => tag.toLowerCase());
+
+    tags.forEach((tag) => {
+      if (user.blacklisted_tags[tag]) {
+        blocklistedTags.push(tag);
+      }
+    });
+  }
+
+  return blocklistedTags;
 }
 
 function checkBlockedUser(obj, user) {
@@ -14,7 +121,7 @@ function checkBlockedUser(obj, user) {
   }
 }
 
-/* Return a content warning, if one exists. */
+// /* Return a content warning, if one exists. */
 function getWarning(obj, settings, user) {
 
   /* Exclude your own pictures. */
@@ -22,6 +129,11 @@ function getWarning(obj, settings, user) {
 
   /* skip if a warning is not present */
   if (!obj.show_content_warning) { return null; }
+
+  /* skip if it belongs to an allowed user. */
+  if (settings.warning_positive_users.includes(obj.owner_username)) {
+    return null;
+  }
 
   const hide = settings.positive_regexes.reduce((show, regex) => {
     if (regex == '') { return show; }

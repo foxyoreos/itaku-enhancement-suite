@@ -1,7 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Itaku Enhancement Suite",
-  "version": "0.7.0",
+  "version": "0.8.0",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "itaku-enhancement-suite@foxyoreos"
+    }
+  },
 
   "description": "A collection of minor site enhancements for Itaku, the furry website",
   "icons": {
@@ -27,26 +33,24 @@
   "content_scripts": [{
     "matches": ["*://*.itaku.ee/*"],
     "js": [
+      "src/clientside.js",
       "src/components/notifications.js",
       "src/components/user_menu.js",
       "src/components/follower-count.js",
-      "src/components/submission_notifications.js"
+      "src/components/submission_notifications.js",
+      "src/components/feed-fixes.js"
     ],
     "css": [
+      "src/components/themes.css",
       "src/components/post-warnings.css",
       "src/components/notifications.css",
       "src/components/extension-indicator.css",
       "src/components/follower-count.css",
-      "src/components/submission-notifications.css"
+      "src/components/submission-notifications.css",
+      "src/components/feed-fixes.css"
     ],
     "run_at": "document_idle"
   }],
-
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "itaku-enhancement-suite@foxyoreos"
-    }
-  },
 
   "action": {
     "default_title": "Itaku Enhancement Suite",

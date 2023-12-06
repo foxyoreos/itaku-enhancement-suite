@@ -61,54 +61,82 @@
 
 
 
-      <layout-section title="Content Warning Regex Filters"
-                      description="Define positive and negative filters for content warnings. Content warnings will be shown by default unless they match a positive filter, in which case they will be hidden. Hidden content warnings are also checked against negative filters, in which case they will be re-shown. Broken/malformed regex filters and blank lines will be ignored. These will soon be fully replaced with a tag-based system.">
-        <input-newline-list slot="control"
-                            label="Positive Filters"
-                            hint="Ignore content warnings if any of these regex match (one per line)"
-                            setting="positive_regexes"></input-newline-list>
-        <input-newline-list slot="control"
-                            label="Negative Filters"
-                            hint="Re-show content warnings if any of these regex match (one per line)"
-                            setting="negative_regexes"></input-newline-list>
-      </layout-section>
+      <layout-section title="Filtering"
+                      description="Options related to turning content warnings on and off, feed filtering, and general blocklist behavior.">
 
-      <layout-section title="Blocklist/Warning Fixes"
-                      description="Itaku's built-in blocklist alternates between hiding content completely and just putting warnings in front of it. This section supplies options to make both the blocklist and content warning feature stricter and more consistent.">
-        <input-toggle slot="control"
-                      label="Always hide blocklisted content (never just show a warning)"
-                      setting="always_hide_blocklists"></input-toggle>
-        <input-toggle slot="control"
-                      label="Bubble blocklists (block posts if any of the images in them are blocked)"
-                      setting="bubble_blocklists"
-                      disable="always_hide_blocklists"></input-toggle>
-        <input-toggle slot="control"
-                      label="Bubble warnings (show a warning on posts that contain images with warnings)"
-                      setting="bubble_warnings"></input-toggle>
-      </layout-section>
-
-      <layout-section title="Feed Filtering"
-                      description="Options to aid in filtering your home feed. Does not affect other feeds or your inbox">
-
-        <input-toggle slot="control"
-                      label="Hide your own posts/images/reshares from your home feed."
-                      setting="hide_own_shares"></input-toggle>
-
-        <input-toggle slot="control"
-                      label="Hide reshares of images and posts that you've already starred."
-                      setting="hide_liked_reshared"></input-toggle>
+        <layout-section title="User Warning Filters"
+                        description="Create a list of users who will have content filters automatically hidden (one per line, use the same username you'd use when mentioning). This setting overrides regex settings below."
+                        slot="control">
+          <input-newline-list slot="control"
+                              label="Hide Warnings For:"
+                              hint="Ignore content warnings for these users"
+                              setting="warning_positive_users"></input-newline-list>
         </layout-section>
 
-      <layout-section title="Miscellaneous Features">
+        <layout-section title="Regex Warning Filters"
+                        description="Define positive and negative filters for content warnings. Content warnings will be shown by default unless they match a positive filter, in which case they will be hidden. Hidden content warnings are also checked against negative filters, in which case they will be re-shown. Broken/malformed regex filters and blank lines will be ignored. These will soon be fully replaced with a tag-based system."
+                        slot="control">
+          <input-newline-list slot="control"
+                              label="Positive Filters"
+                              hint="Ignore content warnings if any of these regex match (one per line)"
+                              setting="positive_regexes"></input-newline-list>
+          <input-newline-list slot="control"
+                              label="Negative Filters"
+                              hint="Re-show content warnings if any of these regex match (one per line)"
+                              setting="negative_regexes"></input-newline-list>
+          <input-toggle slot="control"
+                        label="Convert warnings to tags (may help with poorly tagged images)"
+                        setting="convert_warnings_to_tags"></input-toggle>
+        </layout-section>
+
+        <layout-section title="Feed Filtering"
+                        description="Options to aid in filtering your home feed. Does not affect other feeds or your inbox"
+                        slot="control">
+          <input-toggle slot="control"
+                        label="Hide your own posts/images/reshares from your home feed."
+                        setting="hide_own_shares"></input-toggle>
+
+          <input-toggle slot="control"
+                        label="Hide reshares of images and posts that you've already starred."
+                        setting="hide_liked_reshared"></input-toggle>
+        </layout-section>
+
+        <layout-section title="Behavioral Fixes"
+                        description="Itaku's built-in blocklist alternates between hiding content completely and just putting warnings in front of it. This section supplies options to make both the blocklist and content warning feature stricter and more consistent."
+                        slot="control">
+          <input-toggle slot="control"
+                        label="Always hide blocklisted content (never just show a warning)"
+                        setting="always_hide_blocklists"></input-toggle>
+          <input-toggle slot="control"
+                        label="Bubble blocklists (block posts if any of the images in them are blocked)"
+                        setting="bubble_blocklists"
+                        disable="always_hide_blocklists"></input-toggle>
+          <input-toggle slot="control"
+                        label="Bubble warnings (show a warning on posts that contain images with warnings)"
+                        setting="bubble_warnings"></input-toggle>
+        </layout-section>
+      </layout-section>
+
+      <layout-section title="User Interface"
+                      description="Interface tweaks and changes">
         <input-toggle slot="control"
-                      label="Hide All Follower Counts"
-                      setting="hide_follower_counts"></input-toggle>
+                      label="Allow copy-paste in tag search boxes"
+                      setting="tag_search_copy_paste"></input-toggle>
+        <input-toggle slot="control"
+                      label="Don't show already entered tags in autocomplete"
+                      setting="tag_search_filter_duplicates"></input-toggle>
+        <input-toggle slot="control"
+                      label="Make feed headers sticky"
+                      setting="sticky_headers"></input-toggle>
         <input-toggle slot="control"
                       label="Sort comments in descending order"
                       setting="sort_comments_descending"></input-toggle>
+        <input-toggle slot="control"
+                      label="Hide All Follower Counts"
+                      setting="hide_follower_counts"></input-toggle>
       </layout-section>
 
-      <layout-section title="Experimental Fixes"
+      <layout-section title="General Bugfixes"
                       description="These are bugfixes that Itaku hasn't gotten around to implementing itself yet. If in doubt, leave these on, but they can be toggled off if you run into buggy behavior or if the fixes have unintended side effects.">
         <input-toggle slot="control"
                       label="Fix tag search for & symbol"
@@ -119,6 +147,12 @@
       </layout-section>
 
 
+      <layout-section title="Experimental Toggles"
+                      description="Avoid changing these unless you're debugging a specific issue. These are extension overrides and safety valves in case of bugs.">
+        <input-toggle slot="control"
+                      label="Block all clientside script injections (will disable some features)"
+                      setting="disable_all_clientside"></input-toggle>
+      </layout-section>
 
     </main>
     <script src="extension-menu.js" type="module"></script>

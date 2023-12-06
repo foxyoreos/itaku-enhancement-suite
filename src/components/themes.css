@@ -1,0 +1,29 @@
+.rain-dusk-theme {
+    --page-background: #1e1e1e;
+    --font-color: #fff;
+}
+
+.yellow-amber-navy-theme {
+    --page-background: #111a22;
+    --font-color: #fff;
+}
+
+.sky-pink-navy-theme {
+    --page-background: #111a22;
+    --font-color: #fff;
+}
+
+.sky-bink-light-theme {
+    --page-background: #fafafa;
+    --font-color: rgba(0,0,0,0.87);
+}
+
+.indigo-light-theme {
+    --page-background: #fafafa;
+    --font-color: rgba(0,0,0,0.87);
+}
+
+.brown-light-theme {
+    --page-background: #fafafa;
+    --font-color: rgba(0,0,0,0.87);
+}

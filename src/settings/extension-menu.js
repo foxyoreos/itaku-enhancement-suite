@@ -7,7 +7,7 @@ import settings from "./settings.js";
 (async function () {
 
   /* Add listeners to settings */
-  const settingElements = document.querySelectorAll('layout-section > *');
+  const settingElements = document.querySelectorAll('layout-section > *:not(layout-section)');
   const bindings = Array.prototype.map.call(settingElements, (setting) => {
     const attribute = setting.getAttribute('setting');
     const disabledAttribute = setting.getAttribute('disable');
