@@ -2,6 +2,7 @@
   const baseURL = '/IES'
   const scripts = [
     { name: 'search-fixes.js', settings: ['tag_search_copy_paste', 'tag_search_filter_duplicates'] },
+    { name: 'notification-fixes.js', settings: ['fix_submission_notifs'] },
   ];
 
   const settings = await browser.storage.sync.get();

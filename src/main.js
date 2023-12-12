@@ -306,6 +306,18 @@ function recurseContentObject (obj) {
     'content_object',
   ];
 
+  /* When present, these fields are preserved on children (until overwritten) */
+  const copy_fields = [
+    'owner_username',
+    'owner_displayname'
+  ];
+
+  const fields = copy_fields.reduce((result, field) => {
+    if (obj[field]) {
+      result[field] = obj[field];
+    }
+    return result;
+  }, {});
 
   cacheContentObject(obj);
 
@@ -328,6 +340,13 @@ function recurseContentObject (obj) {
 
     const children = obj[field];
     let result = children.reduce((result, child) => {
+      /* attach preserved properties */
+      copy_fields.forEach((field) => {
+        if (obj[field] != null && child[field] == null) {
+          child[field] = obj[field];
+        }
+      })
+
       child = recurseContentObject(child);
 
       /* Return null from a filter script to remove the child/object from its parent. */

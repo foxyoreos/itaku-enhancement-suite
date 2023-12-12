@@ -16,6 +16,7 @@
 
 .ItakuEnhanced--stickyHeaders app-filter {
     background: var(--page-background);
+    display: block;
     position: sticky;
     top: calc(7em + 1px);
     margin-top: -8px;
@@ -23,22 +24,25 @@
     z-index: 100;
 }
 
-/* Fix for a gallery-specific bug that I'm not sure where to start tracking down.*/
-/* Probably a Firefox bug? But this fixes is at least. */
-.ItakuEnhanced--stickyHeaders app-home-images app-filter,
-.ItakuEnhanced--stickyHeaders app-home-comms app-filter {
+
+/* Fix for colors being off for embedded filters within profile feeds */
+.ItakuEnhanced--stickyHeaders app-feed app-filter {
+    background: unset;
+}
+
+
+/* Fix for user profile folder/image gallery views with folders. */
+@media only screen and (min-width: 1800px) {
+  .ItakuEnhanced--stickyHeaders app-profile .content.container,
+  .ItakuEnhanced--stickyHeaders app-profile .gallery-content.container {
+    /* Folders are fixed-width 320: formula for centering is 50% = (50% - 320)/2 + 320 - y */
+    left: -160px;
     position: relative;
-    top: unset;
-    margin-top: unset;
-    padding-top: unset;
+  }
 }
 
-.ItakuEnhanced--stickyHeaders app-home-images app-filter > .wrapper,
-.ItakuEnhanced--stickyHeaders app-home-comms app-filter > .wrapper{
-    background: var(--page-background);
-    position: sticky;
-    top: calc(7em + 1px);
-    margin-top: -8px;
-    padding-top: 8px;
-    z-index: 100;
+.ItakuEnhanced--stickyHeaders app-profile mat-card.folders-card,
+.ItakuEnhanced--stickyHeaders app-profile .sections-card-wrapper-gt-sm {
+  position: sticky;
+  top: 8em;
 }
