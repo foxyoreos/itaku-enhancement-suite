@@ -40,6 +40,8 @@ const CONTENT_FEEDS = {
     'https://itaku.ee/api/user_profiles/*/latest_content/', /* Recently starred/uploaded */
     'https://itaku.ee/api/galleries/images/user_starred_imgs/?*', /* starred images on profiles */
     'https://itaku.ee/api/submission_inbox/?*', /* Self explanatory... submission inbox. */
+    'https://itaku.ee/api/submission_inbox/get_images_only/?*', /* Submission inbox images view. */
+    'https://itaku.ee/api/submission_inbox/get_reshared_notifs/?*', /* Submission inbox reshares. */
 
     /* These links are used more for direct fetch caching, rather than content warnings */
     'https://itaku.ee/api/*/comments/?*', /* Comment fetch */
@@ -78,8 +80,11 @@ async function load () {
   settings.positive_regexes = settings.positive_regexes || [];
   settings.negative_regexes = settings.negative_regexes || [];
   settings.tag_warnings = settings.tag_warnings || [];
+
   const userObj = JSON.parse(sessionStorage.getItem('ItakuEnhancedUserMeta')) || {};
-  user.id = userObj.id;
+  user.id = userObj.id || settings.__INLINE__current_id;
+  user.blacklisted_tags = userObj.blacklisted_tags || settings.__INLINE__blocked_tags;
+  user.blacklisted_users = settings.blacklisted_users || settings.__INLINE__blocked_users;
   user.username = userObj.username;
 }
 
@@ -240,11 +245,13 @@ browser.webRequest.onBeforeRequest.addListener((details) => {
     (() => {
       if (!json.meta) { return null; }
       settings.__INLINE__mute_submission_notifs = json.meta.mute_submission_notifs;
-      save();
+      settings.__INLINE__blocked_users = user.blacklisted_users;
+      settings.__INLINE__blocked_tags = user.blacklisted_tags;
+      settings.__INLINE__current_id = user.id;
     })();
 
-    sessionStorage.setItem('ItakuEnhancedUserMeta', JSON.stringify(user));
     console.log('Caching for user: ', user);
+    save();
     filter.close();
   }
 }, USER_CALLS, ['blocking']);
