@@ -53,13 +53,38 @@ const settings = new Proxy(_settings, {
   set (settings, prop, value) {
     if (settings[prop] === value) { return true; } /* Don't trigger logic if nothing has actually changed */
 
-    /* And the more complicated array check. */
-    if (settings[prop] instanceof Array && value instanceof Array) {
-      let changed = settings[prop].length !== value.length || value.reduce((result, item, index) => {
-        return result || item !== settings[prop][index]
-      }, false);
-      if (!changed) { return true; }
+    /* We could do more complicated logic here, but it's largely unnecessary. */
+    if (typeof settings[prop] === "object" && settings[prop] != null) {
+      if (JSON.stringify(settings[prop]) === JSON.stringify(value)) { return true; }
     }
+
+    /* And the more complicated array check. */
+    // if (settings[prop] instanceof Array && value instanceof Array) {
+    //   let changed = settings[prop].length !== value.length || value.reduce((result, item, index) => {
+    //     const isValObj = typeof item === "Object" && item != null;
+    //     const isCurrentObj = typeof settings[prop][index] === "Object" && settings[prop][index] != null;
+    //     return result || (
+    //       (isValObj ? JSON.stringify(item) : item) !==
+    //         (isCurrentObj ? JSON.stringify(settings[prop][index]) : settings[prop][index]));
+
+    //   }, false);
+    //   if (!changed) { return true; }
+    // }
+
+    // /* And object checks too */
+    // if (typeof settings[prop] === "Object" && settings[prop] != null) {
+    //   let changed = Object.keys(value).length !== Object.keys(settings[prop]).length ||
+    //       Object.keys(value).reduce((result, key) => {
+    //         const item = value[key];
+    //         const isValObj = typeof item === "Object" && item != null;
+    //         const isCurrentObj = typeof settings[prop][index] === "Object" && settings[prop][index] != null;
+    //         return result || (
+    //           (isValObj ? JSON.stringify(item) : item) !==
+    //             (isCurrentObj ? JSON.stringify(settings[prop][index]) : settings[prop][index]));
+
+    //       }, false);
+    //   if (!changed) { return true; }
+    // }
 
     settings[prop] = value;
 
