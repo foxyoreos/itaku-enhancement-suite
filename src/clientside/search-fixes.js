@@ -21,6 +21,18 @@
       this.__ItakuES__ = {};
     }
 
+    /* Copied from `addTag` in the Itaku source code.
+     * This gets overwritten when called through `addTags`,
+     * so we need to manually do the same before we call into
+     * that codebase. We could also skip `addTags` entirely and call
+     * into `addTag` ourselves with the strings, but I think this is
+     * more maintainable long-term, and leaves open the door to do
+     * more tag customization, maybe. */
+    normalizeTagName (tag) {
+      const self = this.__ItakuES__;
+      return tag.trim().replace(/[,"'# ]+/g, '').substring(0, self.maxTagNameLength);
+    }
+
     connectedCallback() {
       const self = this.__ItakuES__;
       self.searchElement = this.children[0];
@@ -62,7 +74,7 @@
           const tagText = event.clipboardData.getData('text');
           const tags = tagText.split(' ');
           if (tags.length > 1) {
-            self.searchComponent.addTags(tags.map((tag) => ({ name: tag })));
+            self.searchComponent.addTags(tags.map((tag) => ({ name: this.normalizeTagName(tag) })));
             event.preventDefault();
           }
         });
