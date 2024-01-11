@@ -30,7 +30,7 @@
      * more tag customization, maybe. */
     normalizeTagName (tag) {
       const self = this.__ItakuES__;
-      return tag.trim().replace(/[,"'# ]+/g, '').substring(0, self.maxTagNameLength);
+      return tag.trim().replace(/[,"'# ]+/g, '').substring(0, self.searchComponent.maxTagNameLength);
     }
 
     connectedCallback() {

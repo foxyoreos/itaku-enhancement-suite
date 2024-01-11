@@ -1,29 +1,41 @@
+:root {
+    --page-background: #303030;
+    --tagme-highlight: #83ec9d;
+    --font-color: #fff;
+}
+
 .rain-dusk-theme {
     --page-background: #1e1e1e;
+    --tagme-highlight: #83ec9d;
     --font-color: #fff;
 }
 
 .yellow-amber-navy-theme {
     --page-background: #111a22;
+    --tagme-highlight: #83ec9d;
     --font-color: #fff;
 }
 
 .sky-pink-navy-theme {
     --page-background: #111a22;
+    --tagme-highlight: #028002;
     --font-color: #fff;
 }
 
-.sky-bink-light-theme {
+.sky-pink-light-theme {
     --page-background: #fafafa;
+    --tagme-highlight: #028002;
     --font-color: rgba(0,0,0,0.87);
 }
 
-.indigo-light-theme {
+.indigo-pink-light-theme {
     --page-background: #fafafa;
+    --tagme-highlight: #028002;
     --font-color: rgba(0,0,0,0.87);
 }
 
-.brown-light-theme {
+.brown-wine-light-theme {
     --page-background: #fafafa;
+    --tagme-highlight: #028002;
     --font-color: rgba(0,0,0,0.87);
 }

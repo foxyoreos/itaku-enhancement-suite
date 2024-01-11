@@ -1,0 +1,35 @@
+.ItakuExtensionSuite__app-image-detail--tagme button[data-cy="app-image-detail-suggest-tags-btn"]{
+    background-color: var(--tagme-highlight)!important;
+    box-shadow: 0 0 5px -1px var(--tagme-highlight)!important;
+    position: relative;
+}
+
+.ItakuExtensionSuite__app-image-detail__TagMeHover {
+    display: block;
+    position: absolute;
+    left: -100000px;
+    top: -100000px;
+    opacity: 0;
+    height: 0;
+    width: 0;
+}
+
+.ItakuExtensionSuite__app-image-detail--tagme button[data-cy="app-image-detail-suggest-tags-btn"]:hover .ItakuExtensionSuite__app-image-detail__TagMeHover,
+.ItakuExtensionSuite__app-image-detail--tagme button[data-cy="app-image-detail-suggest-tags-btn"]:focus .ItakuExtensionSuite__app-image-detail__TagMeHover {
+    /* Center */
+    position: absolute;
+    left: 50%;
+    top: 3em;
+    transform: translateX(-50%);
+    width: max-content;
+    height: fit-content;
+    max-width: 10em;
+
+    opacity: 1;
+    line-height: 1.1;
+    background-color: rgba(200, 200, 200);
+    border-radius: 5px;
+    white-space: normal;
+    padding: 0.5em;
+    pointer-events: none;
+}

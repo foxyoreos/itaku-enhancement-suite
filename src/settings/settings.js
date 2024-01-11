@@ -33,6 +33,8 @@ const _settings = {
   // exempt_unstarred_self_reshares: true, /* show reshares by an uploader of their own content, even if `hide_followed_reshares` is checked.
   //                                        * This is still overridden by `hide_liked_reshares`. */
 
+  highlight_tagMe: true,
+
   /* Misc */
   sort_comments_descending: false,
   sticky_headers: true,

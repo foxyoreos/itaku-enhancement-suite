@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Itaku Enhancement Suite",
-  "version": "0.8.5",
+  "version": "0.8.6",
 
   "browser_specific_settings": {
     "gecko": {
@@ -45,7 +45,8 @@
       "src/components/extension-indicator.css",
       "src/components/follower-count.css",
       "src/components/submission-notifications.css",
-      "src/components/feed-fixes.css"
+      "src/components/feed-fixes.css",
+      "src/components/app-image-detail.css"
     ],
     "run_at": "document_idle"
   }],
