@@ -45,6 +45,7 @@ const _settings = {
   fix_unescaped_queries: true,
   fix_submission_notifs: true,
   disable_all_clientside: false,
+  show_unlisted_bookmarks: true,
 
   /* Itaku internal settings */
   __INLINE__mute_submission_notifs: false,
