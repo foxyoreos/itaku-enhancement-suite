@@ -114,6 +114,10 @@ function checkBlocklisted(obj, settings, user) {
 
 function checkBlockedUser(obj, user) {
   if (user?.id === obj.owner) { return false; }
+
+  /* Don't remove comments by blocklisted users (TODO add an option for this later per-block) */
+  if (obj.content_type === 'comment') { return false; }
+
   if (user?.blacklisted_users) {
     return !!user.blacklisted_users[obj.owner];
   }

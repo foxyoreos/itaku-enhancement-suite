@@ -4,6 +4,7 @@ import blocklist from "./listeners/blocklist.js";
 import reshares from "./listeners/reshares.js";
 import feedFilter from "./listeners/feedFilter.js";
 import comments from "./listeners/comments.js";
+import content_type from "./listeners/content_type.js";
 
 /* ------------------------------------------------------ */
 /* --------------- CACHES/SETTINGS/CONSTANTS ------------ */
@@ -43,7 +44,8 @@ const CONTENT_FEEDS = {
     'https://itaku.ee/api/submission_inbox/get_images_only/?*', /* Submission inbox images view. */
     'https://itaku.ee/api/submission_inbox/get_reshared_notifs/?*', /* Submission inbox reshares. */
 
-    /* These links are used more for direct fetch caching, rather than content warnings */
+    /* These links are used more for direct fetch caching, rather than content warnings,
+     * Comments are excluded from blocklist rules (for now) */
     'https://itaku.ee/api/*/comments/?*', /* Comment fetch */
     'https://itaku.ee/api/galleries/images/*/',
 
@@ -412,6 +414,7 @@ const preFilters = [
 const responseFilters = [
   feedFilter,
   reshares,
+  content_type,
 ];
 
 /* Most commonly called filters, called recursively for each content object
