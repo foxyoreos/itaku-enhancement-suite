@@ -63,6 +63,11 @@ const USER_CALLS = {
   types: ['xmlhttprequest']
 };
 
+const SETTINGS_CALLS = {
+  urls: ['https://itaku.ee/api/user_metas/blacklist_user/'],
+  types: ['xmlhttprequest']
+};
+
 /* Reactive properties */
 browser.storage.onChanged.addListener(async () => {
   const storageSettings = await browser.storage.sync.get();
@@ -257,6 +262,34 @@ browser.webRequest.onBeforeRequest.addListener((details) => {
     filter.close();
   }
 }, USER_CALLS, ['blocking']);
+
+browser.webRequest.onBeforeRequest.addListener((details) => {
+  let filter = browser.webRequest.filterResponseData(details.requestId);
+  let decoder = new TextDecoder('utf-8');
+  let str = '';
+  filter.ondata = (e) => {
+    str += decoder.decode(e.data, { stream: true });
+    filter.write(e.data);
+  }
+
+  filter.onstop = (e) => {
+    const json = JSON.parse(str);
+    if (!json.new_meta) {
+      return;
+    }
+
+    user.blacklisted_users = json.new_meta.blacklisted_users.reduce((result, id) => {
+      result[id] = true;
+      return result;
+    }, {});
+
+    settings.__INLINE__blocked_users = user.blacklisted_users;
+    console.log('updated user meta', settings);
+    save();
+    filter.close();
+  };
+
+}, SETTINGS_CALLS, ['blocking']);
 
 
 /* ------------------------------------------------------ */

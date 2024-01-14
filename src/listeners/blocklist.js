@@ -113,14 +113,18 @@ function checkBlocklisted(obj, settings, user) {
 }
 
 function checkBlockedUser(obj, user) {
-  if (user?.id === obj.owner) { return false; }
+  if (user?.id === obj.owner) { return []; }
 
   /* Don't remove comments by blocklisted users (TODO add an option for this later per-block) */
-  if (obj.content_type === 'comment') { return false; }
+  if (obj.content_type === 'comment') { return []; }
+  if (!user?.blacklisted_users) { return []; }
 
-  if (user?.blacklisted_users) {
-    return !!user.blacklisted_users[obj.owner];
+  const hiddenUsers = [...(obj?.blacklisted?.users || [])];
+  if (user?.blacklisted_users?.[obj.owner]) {
+    hiddenUsers.push(obj.owner);
   }
+
+  return hiddenUsers;
 }
 
 // /* Return a content warning, if one exists. */
@@ -168,6 +172,7 @@ export default function blocklist(obj, settings, child_fields, user) {
   /* Aggregate applicable warnings/blocks */
   const blockedTagsSet = new Set([]);
   const contentWarningSet = new Set([]);
+  const blockedUserSet = new Set([]);
 
   /* Examine children first. */
   child_fields.forEach((field) => {
@@ -191,6 +196,15 @@ export default function blocklist(obj, settings, child_fields, user) {
       tags.forEach(blockedTagsSet.add, blockedTagsSet);
     });
 
+    /* TODO: this will break pretty hard I think.
+     * There might be a quicker and easier way to do this (recursive deletion if the only child is deleted)
+     * But realistically I also do want bubbling to be able to work. */
+    children.forEach((child) => {
+      if (!settings.bubble_blocklists) { return; }
+      const blocked = checkBlockedUser(child, user);
+      blocked.forEach(blockedUserSet.add, blockedUserSet);
+    });
+
     /* While we're here, we might as well filter out the children that are blocked. */
     /* We can't remove the top-level `obj`, and it wouldn't be desirable to do
      * so anyway, because it would interfere with bubbling (remember that we
@@ -203,7 +217,7 @@ export default function blocklist(obj, settings, child_fields, user) {
     if (settings.always_hide_blocklists) {
       obj[field] = children.filter((child) => {
         /* NOTE: this method must not have side effects, because we're calling it multiple times. */
-        return checkBlocklisted(child, settings, user).length === 0 && !checkBlockedUser(child, user);
+        return checkBlocklisted(child, settings, user).length === 0 && checkBlockedUser(child, user).length === 0;
       });
     }
   });
@@ -212,7 +226,10 @@ export default function blocklist(obj, settings, child_fields, user) {
   (() => {
     let tags = checkBlocklisted(obj, settings, user);
     let warning = getWarning(obj, settings, user);
+    let blockedUsers = checkBlockedUser(obj, user);
     tags.forEach(blockedTagsSet.add, blockedTagsSet);
+    blockedUsers.forEach(blockedUserSet.add, blockedUserSet);
+
     if (warning) { contentWarningSet.add(warning); }
   })();
 
@@ -220,8 +237,8 @@ export default function blocklist(obj, settings, child_fields, user) {
   obj.blacklisted = {
     is_blacklisted: blockedTagsSet.size > 0,
     tags: Array.from(blockedTagsSet),
+    users: Array.from(blockedUserSet),
   };
-
 
   /* Note that we preserve warnings on individual items even if we're overriding
    * them, so this logic is very slightly more complicated. */
@@ -243,6 +260,11 @@ export default function blocklist(obj, settings, child_fields, user) {
    * for now. */
   if (obj.gallery_images && obj.blacklisted.is_blacklisted) {
     obj.content_warning = `${obj.content_warning ? obj.content_warning + ', ' : ''}Blocked tags: ${obj.blacklisted.tags.join(', ')}`;
+    obj.show_content_warning = true;
+  }
+
+  if ((obj.maturity_rating || obj.content_object || obj.gallery_images) && obj.blacklisted.users.length > 0) {
+    obj.content_warning = `${obj.content_warning ? obj.content_warning + ', ' : ''}Blocked User`;
     obj.show_content_warning = true;
   }
 
